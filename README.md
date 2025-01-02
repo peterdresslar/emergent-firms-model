@@ -4,6 +4,11 @@
 This repository contains analysis and extensions of the Emergent Firms Model originally developed by J M Applegate. The base model explores how firms emerge from individual agents' utility-maximizing behaviors, including effects of capital constraints and lending.
 
 ## Original Model
+
+The original version of this model is preserved in the `original-v1.0.0` branch. This represents the initial implementation as uploaded to CoMSES/OpenABM and serves as a reference point for all subsequent development. 
+
+The `main` branch contains subsequent modifications by the maintainer of this repo, @peterdresslar.
+
 The original model was developed by J M Applegate and is available on [CoMSES](https://www.comses.net). The model explores how economies and firms emerge from individual agent behaviors, incorporating:
 - Returns-to-scale benefits
 - Coordination advantages
