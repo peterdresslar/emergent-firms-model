@@ -107,7 +107,8 @@ def decide(i, agents, F, S, move, startup, lending):
     U_single = agents[i]['U_self']
     e_single = agents[i]['e_self']
     
-    A = list(nx.node_connected_component(F, i))
+    A = list(nx.descendants(F, i))
+    A.append(i) # include self
     A.remove(i) #other current firm members
     
     e_other, U_other, firm_other = other_utility(i, agents, F, S, A)
@@ -176,7 +177,8 @@ def other_utility(i, agents, F, S, A):
     U, e_star, firm, e_trial, U_trial = 0, 0, 0, 0, 0
     for j in C:
         trial = agents[j]['firm']
-        D = list(nx.node_connected_component(F, j)) # should be at least one, self
+        D = list(nx.descendants(F, j)) # should be at least one, self
+        D.append(j)
         n = len(D)
         E_o = 0
         for k in D: E_o += agents[k]['e_star']
@@ -224,7 +226,7 @@ def change_ownership(F, i, A, agents):
     return(F)
 
 def distribute_output(agents, F):
-    for g in nx.connected_components(F):
+    for g in nx.strongly_connected_components(F):
         h = list(g)
         n = len(h)
         firm = agents[h[0]]['firm']
@@ -271,7 +273,7 @@ def action(parameters, agentHistory):
     for i in agents: 
         agents[i]['links'] = S.degree(i)
         agents[i]['component'] = [idx for idx, x in enumerate(components) if i in x][0]
-    F = nx.empty_graph(N)
+    F = nx.empty_graph(N, create_using=nx.DiGraph)
 
     loc = 0
     for t in range(tmax):
@@ -283,7 +285,8 @@ def action(parameters, agentHistory):
             firm = agents[i]['firm']
             agents[i]['e_star'], new_firm = decide(i, agents, F, S, move, startup, lending)
             if new_firm != firm: 
-                A = nx.node_connected_component(F, i)
+                A = list(nx.descendants(F, i))
+                A.append(i)
                 if firm == i and len(A) > 1: F = change_ownership(F, i, A, agents)
                 F.add_edge(i, new_firm)
                 if F.has_edge(i, firm): F.remove_edge(i, firm)
