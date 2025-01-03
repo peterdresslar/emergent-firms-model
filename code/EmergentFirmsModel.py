@@ -30,7 +30,7 @@ from scipy.stats import truncnorm
 ######################################################################################################################
 
 # csv file name
-directory = './'
+directory = './data/' # TODO: change this to the directory where you want to save the data
 experiment = 'N600t500r20lendingrate3' # example experiment name
 
 # number of model time steps

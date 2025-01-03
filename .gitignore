@@ -34,3 +34,7 @@ coverage/
 # Misc
 .tmp/
 .temp/
+
+# Data Objects
+code/data/*
+!code/data/.gitkeep
