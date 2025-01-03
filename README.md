@@ -29,6 +29,21 @@ The codebase includes very minor updates for compatibility with Python environme
 
     Note for this version of the model: we see that there may be a difference between the intended operation of the loans concept and the actual implementation. We will explore this in future versions.
 
+## Analysis Tools
+
+This repository includes the following analysis tools:
+
+- **`visualize_network_static.py`**: This script generates a static visualization of the network structure from a GML file. The visualization includes:
+    - A main subplot showing the connected firms and workers, with node size representing the number of employees (in-degree) and node color representing the net worth (savings - loans) using a `SymLogNorm` colormap.
+    - A row of singletons (self-employed agents) arranged by net worth.
+    - Directed edges from worker to employer.
+    - A colorbar indicating the net worth scale.
+- **`check_gml_stats.py`**: This script calculates and prints basic statistics from a GML file, including:
+    - The maximum number of employees (in-degree).
+    - The maximum number of employers (out-degree).
+    - The maximum savings.
+    - The maximum loan.
+
 ## Requirements
 python
 - numpy>=1.20.0
