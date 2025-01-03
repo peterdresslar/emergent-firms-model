@@ -309,5 +309,12 @@ column_names = param_names + ['id', 'omega', 'theta', 'links', 'component', 'a',
                               'e_self', 'e_star',
                               'firm', 'wage', 'savings', 'loan', 'borrow', 'startup', 'move', 'thwart', 'go']
 agentHistoryDF = pandas.DataFrame(agentHistory, columns = column_names)
-agentHistoryDF.to_csv(directory + experiment + '.csv', index=False)
+agentHistoryDF.to_csv(directory + experiment + '.csv', index=False, float_format=lambda x: f'{x:.12f}'.rstrip('0').rstrip('.'))
+
+# Format node attributes before writing GML
+for node in F.nodes():
+    for attr in ['savings', 'wage', 'loan']:
+        if attr in F.nodes[node]:
+            F.nodes[node][attr] = f'{float(F.nodes[node][attr]):.12f}'.rstrip('0').rstrip('.')
+
 nx.write_gml(F, directory + experiment + '.gml')
