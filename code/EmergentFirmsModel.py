@@ -1,5 +1,8 @@
 # coding: utf-8
 
+# disable ruff E701 for this file, keeping style consistent with original code
+# ruff: noqa: E701
+
 ######################################################################################################################
 # Emergent Firm Model
 # May 20, 2018
@@ -18,8 +21,6 @@
 import numpy
 import random
 import networkx as nx
-import itertools 
-import math
 import pandas
 from scipy.optimize import minimize_scalar
 from scipy.stats import truncnorm
@@ -92,7 +93,7 @@ def singleton_utility(agent):
     e_star, U = 0, 0
     a, b, beta = agent['a'], agent['b'], agent['beta']
     e_star, U = optimize_e(agent['a'], agent['b'], agent['beta'], agent['omega'], agent['theta'], 0, 1)
-    O = (a * e_star + b * e_star**beta)
+    O = (a * e_star + b * e_star**beta) # noqa keep original code variable name
     return (e_star, U, O)
 
 ######################################################################################################################
@@ -194,8 +195,13 @@ def current_utility(i, agents, A): # A is other employees
     return (e_star, U)
 
 def optimize_e(a, b, beta, w, theta, E_o, n):
-    f = lambda e_star: -1 * ((a * (e_star + E_o) + b * (e_star + E_o) ** beta)
-                             / n) ** theta * (w - e_star) ** (1 - theta)
+    # original code:
+    # f = lambda e_star: -1 * ((a * (e_star + E_o) + b * (e_star + E_o) ** beta)
+    #                          / n) ** theta * (w - e_star) ** (1 - theta)
+    # rewritten for my understanding:
+    def f(e_star):
+        return -1 * ((a * (e_star + E_o) + b * (e_star + E_o) ** beta) / n) ** theta * (w - e_star) ** (1 - theta)
+    
     res = minimize_scalar(f, bounds=(0, 1), method='bounded')
     return(res.x, -res.fun) # returns estar and maximized utility
 
@@ -270,7 +276,7 @@ def action(parameters, agentHistory):
     loc = 0
     for t in range(tmax):
         for i in agents: agents[i].update({'go': 0, 'borrow': 0, 'startup': 0, 'move': 0, 'thwart': 0})
-        sequence = random.sample(range(N), k=N)
+        sequence = random.sample(range(N), k=N) # noqa: F841 (this was in the original code)
         for i in random.sample(range(N), k=N):
             if random.random() > churn: continue
             agents[i]['go'] = 1
