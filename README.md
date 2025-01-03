@@ -27,6 +27,8 @@ The codebase includes very minor updates for compatibility with Python environme
     - The `nx.connected_components` function was replaced with `nx.strongly_connected_components` in the `distribute_output` function.
     - **Conceptual Change:** The `distribute_output` function now distributes output based on *strongly connected components* rather than *connected components*. This is a conceptual change that should be reviewed carefully, as it may affect the model's behavior.
 
+    Note for this version of the model: we see that there may be a difference between the intended operation of the loans concept and the actual implementation. We will explore this in future versions.
+
 ## Requirements
 python
 - numpy>=1.20.0
