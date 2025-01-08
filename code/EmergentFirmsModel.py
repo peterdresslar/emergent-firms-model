@@ -24,6 +24,7 @@ import networkx as nx
 import pandas
 from scipy.optimize import minimize_scalar
 from scipy.stats import truncnorm
+import json
 
 ######################################################################################################################
 # model parameter settings
@@ -99,7 +100,7 @@ def singleton_utility(agent):
 ######################################################################################################################
 # decision functions
 ######################################################################################################################
-def decide(i, agents, F, S, move, startup, lending):
+def decide(i, agents, F, S, move_cost, startup_cost, lending):
     firm = agents[i]['firm']
     wage = agents[i]['wage']
     savings = agents[i]['savings']
@@ -111,70 +112,149 @@ def decide(i, agents, F, S, move, startup, lending):
     A.append(i) # include self
     A.remove(i) #other current firm members
     
-    e_other, U_other, firm_other = other_utility(i, agents, F, S, A)
+    e_other, U_other, firm_other, other_log_entry = other_utility(i, agents, F, S, A)
     
+    log_entry = {
+        "agent_id": i,
+        "time": None,  # will be filled in action()
+        "decision_type": None,
+        "old_firm": firm,
+        "old_wage": wage,
+        "old_savings": savings,
+        "old_loan": loan,
+        "U_single": U_single,
+        "e_single": e_single,
+        "U_other": U_other,
+        "e_other": e_other,
+        "firm_other": firm_other,
+        "new_firm": None,
+        "new_e_star": None,
+        "cost": None,
+        "sampled_inputs": {},
+        "narrative": "",
+        "other_utility_log": other_log_entry
+    }
+
     if not A: #singleton firm
-        cost = wage * move
+        log_entry["decision_type"] = "singleton_firm"
+        cost = wage * move_cost
+        log_entry["cost"] = cost
+        log_entry["sampled_inputs"]["move_cost"] = move_cost
         if U_other > U_single:
-            if savings >= cost: 
-                e_star, firm = e_other, firm_other 
+            log_entry["narrative"] = f"Singleton agent {i} considers moving to firm {firm_other} because U_other ({U_other:.4f}) > U_single ({U_single:.4f})."
+            if savings >= cost:
+                e_star, firm = e_other, firm_other
                 agents[i]['savings'] += -1 * cost
                 agents[i]['move'] = 1
+                log_entry["narrative"] += f" Agent {i} has sufficient savings ({savings:.4f}) to cover move cost ({cost:.4f})."
+                log_entry["new_firm"] = firm
+                log_entry["new_e_star"] = e_star
             elif lending and loan == 0:
                 e_star, firm = e_other, firm_other
                 agents[i]['loan'] = cost - savings
                 agents[i]['savings'] = 0
                 agents[i]['move'] = 1
                 agents[i]['borrow'] = 1
-            else: 
+                log_entry["narrative"] += f" Agent {i} borrows to cover move cost ({cost:.4f}) because savings ({savings:.4f}) are insufficient."
+                log_entry["new_firm"] = firm
+                log_entry["new_e_star"] = e_star
+            else:
                 e_star = e_single
                 agents[i]['thwart'] = 1
-        else: 
+                log_entry["narrative"] += f" Agent {i} cannot afford to move and has no loan, so move is thwarted."
+                log_entry["new_firm"] = firm
+                log_entry["new_e_star"] = e_star
+        else:
             e_star = e_single
+            log_entry["narrative"] = f"Singleton agent {i} remains in place because U_other ({U_other:.4f}) <= U_single ({U_single:.4f})."
+            log_entry["new_firm"] = firm
+            log_entry["new_e_star"] = e_star
                 
-    else: 
+    else:
+        log_entry["decision_type"] = "non_singleton_firm"
         e_current, U_current = current_utility(i, agents, A)
         all_U = [U_current, U_other, U_single]
+        log_entry["U_current"] = U_current
+        log_entry["e_current"] = e_current
+        log_entry["sampled_inputs"]["all_U"] = all_U
     
         if max(all_U) == U_single:
-            cost = startup * wage
-            if savings >= cost: 
+            log_entry["narrative"] = f"Agent {i} considers starting a new firm because U_single ({U_single:.4f}) is the highest utility."
+            cost = startup_cost * wage
+            log_entry["cost"] = cost
+            log_entry["sampled_inputs"]["startup_cost"] = startup_cost
+            if savings >= cost:
                 e_star, firm = e_single, i
                 agents[i]['savings'] += -1 * cost
                 agents[i]['startup'] = 1
+                log_entry["narrative"] += f" Agent {i} has sufficient savings ({savings:.4f}) to cover startup cost ({cost:.4f})."
+                log_entry["new_firm"] = firm
+                log_entry["new_e_star"] = e_star
             elif lending and loan == 0:
                 e_star, firm = e_single, i
                 agents[i]['loan'] = cost - savings
                 agents[i]['savings'] = 0
                 agents[i]['startup'] = 1
                 agents[i]['borrow'] = 1
-            else: 
+                log_entry["narrative"] += f" Agent {i} borrows to cover startup cost ({cost:.4f}) because savings ({savings:.4f}) are insufficient."
+                log_entry["new_firm"] = firm
+                log_entry["new_e_star"] = e_star
+            else:
                 e_star = e_current
                 agents[i]['thwart'] = 1
-        elif max(all_U) == U_other: 
-            cost = move * wage
-            if savings >= cost: 
-                e_star, firm = e_other, firm_other 
+                log_entry["narrative"] += f" Agent {i} cannot afford to start a firm and has no loan, so startup is thwarted."
+                log_entry["new_firm"] = firm
+                log_entry["new_e_star"] = e_star
+        elif max(all_U) == U_other:
+            log_entry["narrative"] = f"Agent {i} considers moving to firm {firm_other} because U_other ({U_other:.4f}) is the highest utility."
+            cost = move_cost * wage
+            log_entry["cost"] = cost
+            log_entry["sampled_inputs"]["move_cost"] = move_cost
+            if savings >= cost:
+                e_star, firm = e_other, firm_other
                 agents[i]['savings'] += -1 * cost
                 agents[i]['move'] = 1
+                log_entry["narrative"] += f" Agent {i} has sufficient savings ({savings:.4f}) to cover move cost ({cost:.4f})."
+                log_entry["new_firm"] = firm
+                log_entry["new_e_star"] = e_star
             elif lending and loan == 0:
-                e_star, firm = e_other, firm_other 
+                e_star, firm = e_other, firm_other
                 agents[i]['loan'] = cost - savings
                 agents[i]['savings'] = 0
                 agents[i]['move'] = 1
                 agents[i]['borrow'] = 1
-            else: 
+                log_entry["narrative"] += f" Agent {i} borrows to cover move cost ({cost:.4f}) because savings ({savings:.4f}) are insufficient."
+                log_entry["new_firm"] = firm
+                log_entry["new_e_star"] = e_star
+            else:
                 e_star = e_current
                 agents[i]['thwart'] = 1
-        else: 
-            e_star = e_current 
+                log_entry["narrative"] += f" Agent {i} cannot afford to move and has no loan, so move is thwarted."
+                log_entry["new_firm"] = firm
+                log_entry["new_e_star"] = e_star
+        else:
+            e_star = e_current
+            log_entry["narrative"] = f"Agent {i} remains in place because U_current ({U_current:.4f}) is the highest utility."
+            log_entry["new_firm"] = firm
+            log_entry["new_e_star"] = e_star
     
-    return(e_star, firm)
+    return(e_star, firm, log_entry)
 
 def other_utility(i, agents, F, S, A):
     B = list(S.neighbors(i)) # Network is created with at least two links per node.
     C = [a for a in B if a not in A]
     U, e_star, firm, e_trial, U_trial = 0, 0, 0, 0, 0
+    
+    log_entry = {
+        "agent_id": i,
+        "function": "other_utility",
+        "evaluated_firms": [],
+        "best_firm": None,
+        "best_e_star": None,
+        "best_U": None,
+        "narrative": ""
+    }
+    
     for j in C:
         trial = agents[j]['firm']
         D = list(nx.descendants(F, j)) # should be at least one, self
@@ -185,8 +265,22 @@ def other_utility(i, agents, F, S, A):
         e_trial, U_trial = optimize_e(agents[trial]['a'], agents[trial]['b'], agents[trial]['beta'], 
                                       agents[i]['omega'], 
                                       agents[i]['theta'], E_o, n + 1)
-        if U_trial > U: e_star, U, firm = e_trial, U_trial, trial
-    return (e_star, U, firm) 
+        log_entry["evaluated_firms"].append({
+            "firm_id": trial,
+            "e_trial": e_trial,
+            "U_trial": U_trial
+        })
+        if U_trial > U: 
+            e_star, U, firm = e_trial, U_trial, trial
+            log_entry["best_firm"] = firm
+            log_entry["best_e_star"] = e_star
+            log_entry["best_U"] = U
+            log_entry["narrative"] = f"Agent {i} found firm {firm} to have the highest utility ({U:.4f}) among neighbors."
+    
+    if not C:
+        log_entry["narrative"] = f"Agent {i} has no neighbors to evaluate."
+    
+    return (e_star, U, firm, log_entry)
 
 def current_utility(i, agents, A): # A is other employees
     e_star, U, E_o = 0, 0, 0
@@ -258,24 +352,24 @@ def pay_loans(N, agents, lendingrate):
 ######################################################################################################################
 
 def action(parameters, agentHistory):
-    
     N, churn, cost, multiplier, savingrate, sigma, lending, lendingrate = parameters
-    move = cost
-    startup = multiplier * cost
+    move_rate = cost
+    startup_rate = multiplier * cost
     
     X = 0 if sigma == 0 else truncnorm((0 - savingrate) / sigma, (1 - savingrate) / sigma, loc=savingrate, scale=sigma)
     
     agents = create_agents(N, savingrate, sigma, X)
-    for i in agents: 
+    for i in agents:
         agents[i]['e_self'], agents[i]['U_self'], agents[i]['wage'] = singleton_utility(agents[i])
         agents[i]['e_star'] = agents[i]['e_self']
     S, components = social_network(N, mindegree, maxdegree)
-    for i in agents: 
+    for i in agents:
         agents[i]['links'] = S.degree(i)
         agents[i]['component'] = [idx for idx, x in enumerate(components) if i in x][0]
     F = nx.empty_graph(N, create_using=nx.DiGraph)
 
     loc = 0
+    events_log = [] # Initialize the events log
     for t in range(tmax):
         for i in agents: agents[i].update({'go': 0, 'borrow': 0, 'startup': 0, 'move': 0, 'thwart': 0})
         sequence = random.sample(range(N), k=N) # noqa: F841 (this was in the original code)
@@ -283,8 +377,9 @@ def action(parameters, agentHistory):
             if random.random() > churn: continue
             agents[i]['go'] = 1
             firm = agents[i]['firm']
-            agents[i]['e_star'], new_firm = decide(i, agents, F, S, move, startup, lending)
-            if new_firm != firm: 
+            agents[i]['e_star'], new_firm, log_entry = decide(i, agents, F, S, move_rate, startup_rate, lending)
+            log_entry["time"] = t # Add the time to the log entry
+            if new_firm != firm:
                 A = list(nx.descendants(F, i))
                 A.append(i)
                 if firm == i and len(A) > 1: F = change_ownership(F, i, A, agents)
@@ -294,13 +389,20 @@ def action(parameters, agentHistory):
             F.nodes[i]['savings'] = numpy.float64(agents[i]['savings'])
             F.nodes[i]['wage'] = numpy.float64(agents[i]['wage'])
             F.nodes[i]['loan'] = numpy.float64(agents[i]['loan'])
+            
+            if log_entry["decision_type"] is not None:
+                events_log.append(log_entry) # Append the log entry to the events log
         distribute_output(agents, F)
         if lending: pay_loans(N, agents, lendingrate)
         params = parameters + [t]
         agentHistory[loc:loc+N,0:9] = numpy.tile(params,(N, 1))
         agentHistory[loc:loc+N,9:] = numpy.array([list(v.values()) for v in agents.values()])
         loc += N
-        
+    
+    # After the main loop finishes, serialize the events to JSON.
+    with open(directory + experiment + "_events.json", "w") as f:
+        json.dump(events_log, f, indent=2)
+    
     return(F, agentHistory)
 
 ######################################################################################################################
