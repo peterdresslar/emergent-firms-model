@@ -110,7 +110,7 @@ def decide(i, agents, F, S, move_cost, startup_cost, lending):
     e_single = agents[i]['e_self']
     
     A = list(nx.node_connected_component(F, i))
-    A.remove(i) #other current firm members
+    if i in A: A.remove(i) #other current firm members
     
     e_other, U_other, firm_other, other_log_entry = other_utility(i, agents, F, S, A)
     
@@ -132,9 +132,15 @@ def decide(i, agents, F, S, move_cost, startup_cost, lending):
         "cost": None,
         "sampled_inputs": {},
         "narrative": "",
-        "other_utility_log": other_log_entry
+        "other_utility_log": other_log_entry,
+        "optimize_e_verification": None
     }
-
+    
+    # Verify optimize_e
+    verification_results = verify_optimize_e(agents, F, i)
+    log_entry["optimize_e_verification"] = verification_results
+    log_entry["narrative"] += verification_results["narrative"]
+    
     if not A: #singleton firm
         log_entry["decision_type"] = "singleton_firm"
         cost = wage * move_cost
@@ -229,7 +235,7 @@ def decide(i, agents, F, S, move_cost, startup_cost, lending):
             else:
                 e_star = e_current
                 agents[i]['thwart'] = 1
-                log_entry["narrative"] += f" Agent {i} cannot afford to move and has no loan, so move is thwarted."
+                log_entry["narrative"] = f" Agent {i} cannot afford to move and has no loan, so move is thwarted."
                 log_entry["new_firm"] = firm
                 log_entry["new_e_star"] = e_star
         else:
@@ -301,6 +307,50 @@ def optimize_e(a, b, beta, w, theta, E_o, n):
     
     res = minimize_scalar(f, bounds=(0, 1), method='bounded')
     return(res.x, -res.fun) # returns estar and maximized utility
+
+def verify_optimize_e(agents, F, i):
+    # Get agent and firm data
+    agent = agents[i]
+    firm_id = agent['firm']
+    A = list(nx.node_connected_component(F, i))
+    if i in A: A.remove(i)
+    n = len(A) + 1
+    E_o = 0
+    for k in A: E_o += agents[k]['e_star']
+    a, b, beta = agents[firm_id]['a'], agents[firm_id]['b'], agents[firm_id]['beta']
+    w, theta = agent['omega'], agent['theta']
+
+    # Calculate expected utility for a range of e_star values
+    e_stars = np.linspace(0, 1, 100)
+    utilities = []
+    for e_star in e_stars:
+        output_share = (a * (e_star + E_o) + b * (e_star + E_o) ** beta) / n
+        utility = output_share ** theta * (w - e_star) ** (1 - theta)
+        utilities.append(utility)
+    
+    # Find the e_star that maximizes utility
+    max_utility_index = np.argmax(utilities)
+    expected_e_star = e_stars[max_utility_index]
+    expected_max_utility = utilities[max_utility_index]
+
+    # Run optimize_e
+    optimized_e_star, optimized_max_utility = optimize_e(a, b, beta, w, theta, E_o, n)
+
+    # Compare results
+    narrative = f"Verification for agent {i}, firm {firm_id}: "
+    if abs(expected_e_star - optimized_e_star) < 0.001:
+        narrative += f"optimize_e is working correctly. "
+    else:
+        narrative += f"optimize_e is NOT working correctly. "
+    narrative += f"Expected e_star: {expected_e_star:.4f}, Optimized e_star: {optimized_e_star:.4f}. "
+    
+    return {
+        "expected_e_star": expected_e_star,
+        "expected_max_utility": expected_max_utility,
+        "optimized_e_star": optimized_e_star,
+        "optimized_max_utility": optimized_max_utility,
+        "narrative": narrative
+    }
 
 ######################################################################################################################
 # utility functions
