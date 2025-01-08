@@ -20,15 +20,6 @@ The codebase includes very minor updates for compatibility with Python environme
 - Modified numpy type declarations
 - Updated package requirements for Python 3.11+ compatibility
 
-### Version 1.0.1
-- **Critical Model Change:** The model now uses a directed graph to represent the employer-employee relationship. This involved the following changes:
-    - The graph is now initialized as a directed graph (`nx.DiGraph`).
-    - The `nx.node_connected_component` function was replaced with `nx.descendants` to find reachable nodes in a directed graph.
-    - The `nx.connected_components` function was replaced with `nx.strongly_connected_components` in the `distribute_output` function.
-    - **Conceptual Change:** The `distribute_output` function now distributes output based on *strongly connected components* rather than *connected components*. This is a conceptual change that should be reviewed carefully, as it may affect the model's behavior.
-
-    Note for this version of the model: we see that there may be a difference between the intended operation of the loans concept and the actual implementation. We will explore this in future versions.
-
 ## Analysis Tools
 
 This repository includes the following analysis tools:

@@ -108,8 +108,7 @@ def decide(i, agents, F, S, move_cost, startup_cost, lending):
     U_single = agents[i]['U_self']
     e_single = agents[i]['e_self']
     
-    A = list(nx.descendants(F, i))
-    A.append(i) # include self
+    A = list(nx.node_connected_component(F, i))
     A.remove(i) #other current firm members
     
     e_other, U_other, firm_other, other_log_entry = other_utility(i, agents, F, S, A)
@@ -257,8 +256,9 @@ def other_utility(i, agents, F, S, A):
     
     for j in C:
         trial = agents[j]['firm']
-        D = list(nx.descendants(F, j)) # should be at least one, self
-        D.append(j)
+        D = list(nx.node_connected_component(F, j))
+        if j in D:
+            D.remove(j)
         n = len(D)
         E_o = 0
         for k in D: E_o += agents[k]['e_star']
@@ -320,7 +320,7 @@ def change_ownership(F, i, A, agents):
     return(F)
 
 def distribute_output(agents, F):
-    for g in nx.strongly_connected_components(F):
+    for g in nx.connected_components(F):
         h = list(g)
         n = len(h)
         firm = agents[h[0]]['firm']
@@ -366,22 +366,21 @@ def action(parameters, agentHistory):
     for i in agents:
         agents[i]['links'] = S.degree(i)
         agents[i]['component'] = [idx for idx, x in enumerate(components) if i in x][0]
-    F = nx.empty_graph(N, create_using=nx.DiGraph)
+    F = nx.empty_graph(N)
 
     loc = 0
-    events_log = [] # Initialize the events log
+    events_log = [] # Initialize the events log at the start of action
     for t in range(tmax):
         for i in agents: agents[i].update({'go': 0, 'borrow': 0, 'startup': 0, 'move': 0, 'thwart': 0})
-        sequence = random.sample(range(N), k=N) # noqa: F841 (this was in the original code)
         for i in random.sample(range(N), k=N):
             if random.random() > churn: continue
             agents[i]['go'] = 1
             firm = agents[i]['firm']
+            # Unpack all three return values from decide
             agents[i]['e_star'], new_firm, log_entry = decide(i, agents, F, S, move_rate, startup_rate, lending)
-            log_entry["time"] = t # Add the time to the log entry
-            if new_firm != firm:
-                A = list(nx.descendants(F, i))
-                A.append(i)
+            log_entry["time"] = t  # Add the time to the log entry
+            if new_firm != firm: 
+                A = nx.node_connected_component(F, i)
                 if firm == i and len(A) > 1: F = change_ownership(F, i, A, agents)
                 F.add_edge(i, new_firm)
                 if F.has_edge(i, firm): F.remove_edge(i, firm)
@@ -391,7 +390,7 @@ def action(parameters, agentHistory):
             F.nodes[i]['loan'] = numpy.float64(agents[i]['loan'])
             
             if log_entry["decision_type"] is not None:
-                events_log.append(log_entry) # Append the log entry to the events log
+                events_log.append(log_entry)
         distribute_output(agents, F)
         if lending: pay_loans(N, agents, lendingrate)
         params = parameters + [t]
@@ -399,7 +398,7 @@ def action(parameters, agentHistory):
         agentHistory[loc:loc+N,9:] = numpy.array([list(v.values()) for v in agents.values()])
         loc += N
     
-    # After the main loop finishes, serialize the events to JSON.
+    # After the main loop finishes, serialize the events to JSON
     with open(directory + experiment + "_events.json", "w") as f:
         json.dump(events_log, f, indent=2)
     
