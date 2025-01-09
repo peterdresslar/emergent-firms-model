@@ -29,11 +29,18 @@ This repository includes the following analysis tools:
     - A row of singletons (self-employed agents) arranged by net worth.
     - Directed edges from worker to employer.
     - A colorbar indicating the net worth scale.
+    - The script uses `matplotlib` to generate the visualization and saves it as a PNG file.
 - **`check_gml_stats.py`**: This script calculates and prints basic statistics from a GML file, including:
     - The maximum number of employees (in-degree).
     - The maximum number of employers (out-degree).
     - The maximum savings.
     - The maximum loan.
+    - The script uses `networkx` to load the GML file and `numpy` to calculate the statistics.
+- **`interactive_population_charts.ipynb`**: This Jupyter Notebook provides interactive charts for exploring agent-level data from the CSV output. It allows you to:
+    - Select an agent ID from a dropdown menu.
+    - View time series charts of various agent attributes, including `wage`, `savings`, `loan`, `a`, `beta`, `links`, `component`, `rate`, `U_self`, `e_self`, and `e_star`.
+    - View binary attributes such as `startup`, `thwart`, `borrow`, `move`, and `go` as time series.
+    - The notebook uses `pandas` to load the CSV data, `matplotlib` for plotting, and `ipywidgets` for interactivity.
 
 ## Known Issues
 
@@ -51,6 +58,8 @@ python
 - networkx>=2.6.0
 - pandas>=1.3.0
 - scipy>=1.7.0
+- matplotlib>=3.4.0
+- ipywidgets>=7.6.0
 
 ## Usage
 0. (From the code directory)
@@ -61,6 +70,9 @@ python
 The model will generate (by default in the working directory):
 - A CSV file containing agent history
 - A GML file representing the final network structure
+- A JSON file containing the event log
+- A CSV file containing the firm history
+- A CSV file containing the economic census
 
 ## License
 This work is derived from code licensed under CC-BY-NC (Creative Commons Attribution-NonCommercial).
