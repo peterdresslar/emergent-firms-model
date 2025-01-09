@@ -35,6 +35,16 @@ This repository includes the following analysis tools:
     - The maximum savings.
     - The maximum loan.
 
+## Known Issues
+
+- **Loan Decision Gap:** Version 1.0 of the model has a significant limitation in its lending mechanism. Agents make borrowing decisions based on immediate utility maximization without considering the long-term consequences of debt. Specifically:
+    - The `optimize_e` function does not take into account the loan burden or the potential for runaway debt.
+    - The `decide` function allows agents to borrow if they have insufficient savings, but it does not consider their ability to repay the loan.
+    - This leads to a situation where some agents get caught in a debt spiral, and overall utility decreases across the model.
+    - This issue is consistent across multiple runs, indicating a systemic flaw in the model's design.
+    - This issue will be addressed in future versions of the model.
+    - We point out this issue aware that the original version by the author may not be the author's final revision, or may not be an attempt at a full simulation--but rather a straightforward demonstration of the techniques involved.
+
 ## Requirements
 python
 - numpy>=1.20.0
