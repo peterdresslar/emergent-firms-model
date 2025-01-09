@@ -62,8 +62,31 @@ sigma = .01
 # toggles lending on (1) or off (0)
 lending = 1
 
-# lending rate
-lendingrate = .03
+### new parameters for v1.0.1
+# lending rate (previous)
+# lendingrate = .03
+
+# loan guidelines:
+# debt_naivety: whether agents consider loan repayability when making decisions.
+# Set to True to simulate behavior from the original model.
+debt_naivety = True 
+
+# loan_repayment_lookahead: This lookahead behaves like a loan term. 
+# Agent uses this to determine if they can repay a loan in the specified time.
+# Higher values should essentially equate to higher risk tolerance, as an external change
+# during repayment could cause the agent to be unable to repay.
+loan_repayment_lookahead = 4
+
+# lending rate (previous)
+# lendingrate = .03
+# We set the lending rate to a more likely "monthly" rate, as the default churn setting 
+# seems analogous to a monthly churn rate.
+lendingrate = .03  # Monthly compound interest rate (3% APR)
+
+# loan_cap: Maximum total loan amount, set somewhat arbitrarily to tmax
+# avoid runaway loans which could distort the population metrics
+# a zero value will remove the cap
+# loan_cap = tmax 
 
 ######################################################################################################################
 # function definitions
