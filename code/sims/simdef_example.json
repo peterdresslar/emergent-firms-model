@@ -1,0 +1,24 @@
+{
+    "sim_name": "example_sim",
+    "is_multi_sim": true,
+    "sims": [
+        {
+            "sim_name": "debt_aware_sim",
+            "sim_params": {
+                "debt_awareness": true,
+                "loan_term": 12,
+                "loan_cap": 1000000
+            },
+            "sim_runs": 10
+        },
+        {
+            "sim_name": "debt_naive_sim",
+            "sim_params": {
+                "debt_awareness": false,
+                "loan_term": 12,
+                "loan_cap": 1000000
+            },
+            "sim_runs": 10
+        }
+    ]
+}
