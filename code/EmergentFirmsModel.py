@@ -291,9 +291,9 @@ def other_utility(i, agents, F, S, A):
         # from the firm they are considering moving to. This way the agent can choose to move to
         # the firm that maximizes their utility out of the options they *can afford*.
 
-        # Check the flag for debt_naivety first! If debt_naivety is True, the model skips the evaluation.
+        # Check the flag for debt_awareness first! If debt_awareness is True, the model skips the evaluation.
         # Note this flag is model-wide, not per-agent.
-        if not debt_awareness:
+        if debt_awareness:
             if can_repay_loan(agents[i], agents[trial]['wage'], agents[i]['loan'], lendingrate, loan_repayment_lookahead):
                 log_entry["narrative"] += f"Agent {i} can repay loan with expected wage from firm {trial}."
             else:

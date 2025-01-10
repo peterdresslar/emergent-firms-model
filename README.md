@@ -79,3 +79,23 @@ This work is derived from code licensed under CC-BY-NC (Creative Commons Attribu
 
 ## Acknowledgments
 This work builds upon the Emergent Firms Model developed by J M Applegate, which itself extends concepts from Rob Axtell's Endogenous Dynamics of Multi-Agent Firms model. Please see the original documentation and CoMSES-specific metadata in `/docs` for more information.
+
+## New in model version 1.0.1: Debt Awareness
+
+This model now includes a `debt_awareness` parameter to control whether agents consider their ability to repay loans.
+
+**Key Changes:**
+
+-   **`debt_awareness`**: When `True` (default), agents consider loan repayment within `loan_term` steps. When `False`, agents ignore repayment.
+-   **`loan_term`**: Loan repayment period (default: 12).
+-   **`lendingrate`**: Monthly rate (default: `1 + (.03 / 12)`).
+-   **`loan_cap`**: Maximum loan amount; 0 disables the cap (default: `tmax`).
+-   **Churn Rate**: Default is 0.01, implying agents review their situation roughly every 100 months.
+
+**Why These Changes Matter:**
+
+-   **Economic Realism**: Agents now consider debt repayment, increasing model realism.
+-   **Model Stability**: Prevents runaway debt accumulation.
+-   **Policy Analysis**: Allows for analysis of debt limitations on agent behavior.
+
+Experiment with `debt_awareness` and other loan settings to observe their impact.
