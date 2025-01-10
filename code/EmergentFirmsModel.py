@@ -67,21 +67,21 @@ lending = 1
 # lendingrate = .03
 
 # loan guidelines:
-# debt_naivety: whether agents consider loan repayability when making decisions.
-# Set to True to simulate behavior from the original model.
-debt_naivety = True 
+# debt_awareness: whether agents consider loan repayability when making decisions.
+# Set to False to simulate behavior from the original model.
+debt_awareness = True 
 
 # loan_repayment_lookahead: This lookahead behaves like a loan term. 
 # Agent uses this to determine if they can repay a loan in the specified time.
 # Higher values should essentially equate to higher risk tolerance, as an external change
 # during repayment could cause the agent to be unable to repay.
-loan_repayment_lookahead = 4
+loan_repayment_lookahead = 12
 
 # lending rate (previous)
 # lendingrate = .03
 # We set the lending rate to a more likely "monthly" rate, as the default churn setting 
 # seems analogous to a monthly churn rate.
-lendingrate = .03  # Monthly compound interest rate (3% APR)
+lendingrate = round(.03/12, 4)  # Monthly compound interest rate (3% APR)
 
 # loan_cap: Maximum total loan amount, set somewhat arbitrarily to tmax
 # avoid runaway loans which could distort the population metrics
@@ -286,6 +286,20 @@ def other_utility(i, agents, F, S, A):
     
     for j in C:
         trial = agents[j]['firm']
+
+        # before we start, we need to check if the agent can repay the loan with the expected wage
+        # from the firm they are considering moving to. This way the agent can choose to move to
+        # the firm that maximizes their utility out of the options they *can afford*.
+
+        # Check the flag for debt_naivety first! If debt_naivety is True, the model skips the evaluation.
+        # Note this flag is model-wide, not per-agent.
+        if not debt_awareness:
+            if can_repay_loan(agents[i], agents[trial]['wage'], agents[i]['loan'], lendingrate, loan_repayment_lookahead):
+                log_entry["narrative"] += f"Agent {i} can repay loan with expected wage from firm {trial}."
+            else:
+                log_entry["narrative"] += f"Agent {i} cannot repay loan with expected wage from firm {trial}."
+                continue
+
         D = list(nx.node_connected_component(F, j))
         if j in D:
             D.remove(j)
@@ -374,6 +388,9 @@ def verify_optimize_e(agents, F, i):
         "optimized_max_utility": optimized_max_utility,
         "narrative": narrative
     }
+
+def can_repay_loan(agent, expected_wage, cost, lendingrate, loan_repayment_lookahead):
+    return agent['savings'] + expected_wage * loan_repayment_lookahead >= cost * (1 + lendingrate) ** loan_repayment_lookahead
 
 ######################################################################################################################
 # utility functions
