@@ -2,6 +2,38 @@
 
 This repository contains analysis and extensions of the Emergent Firms Model originally developed by J M Applegate. The base model explores how firms emerge from individual agents' utility-maximizing behaviors, including effects of capital constraints and lending.
 
+## What's New in Version 1.0.1
+
+### Refactor for Standalone Runability
+
+- **Enhanced Execution Options**: 
+  - The experiment wrapper was replaced with the `__main__` entry point: `action(...)` now initializes all logic so that it can be imported and called by external scripts without using libs.
+  - You can still set variables in the model file and call simulations directly via `python EmergentFirmsModel.py` 
+- **Flexible File Handling**:
+  - New directory/path inputs
+  - Configurable output locations via `path` and `experiment` parameters
+- **Model Integrity**:
+  - Apart from the new Debt Awareness logic (described below), all model logic is preserved with some small Python 3.11 compatibility updates
+
+### Debt Awareness Enhancements
+
+- **debt_awareness** (default: `True`)
+  - When `True`: Agents consider loan repayability within loan term
+  - When `False`: Agents use original model's naive borrowing
+- **loan_repayment_lookahead**
+  - Specifies future timesteps agents consider for loan repayment
+  - Acts as effective loan term
+  - Higher values indicate higher risk tolerance
+- **lendingrate**
+  - Aligned with model's monthly churn rate
+  - Churn default and lendingrate defaults were tweaked to be more in line with each other. Note that with the new Debt Awareness option they are related in a way they otherwise were not before.
+- **loan_cap**
+  - Optional limit on total loan amounts
+  - Disabled by default
+  - Prevents runaway debt scenarios
+
+These enhancements make the model more realistic by implementing practical lending constraints and allowing experimentation with different debt awareness scenarios.
+
 ## Original Model
 
 The original version of this model is preserved in the `original-v1.0.0` branch. This represents the initial implementation as uploaded to CoMSES/OpenABM and serves as a reference point for all subsequent development. 
@@ -79,23 +111,3 @@ This work is derived from code licensed under CC-BY-NC (Creative Commons Attribu
 
 ## Acknowledgments
 This work builds upon the Emergent Firms Model developed by J M Applegate, which itself extends concepts from Rob Axtell's Endogenous Dynamics of Multi-Agent Firms model. Please see the original documentation and CoMSES-specific metadata in `/docs` for more information.
-
-## New in model version 1.0.1: Debt Awareness
-
-This model now includes a `debt_awareness` parameter to control whether agents consider their ability to repay loans.
-
-**Key Changes:**
-
--   **`debt_awareness`**: When `True` (default), agents consider loan repayment within `loan_term` steps. When `False`, agents ignore repayment.
--   **`loan_term`**: Loan repayment period (default: 12).
--   **`lendingrate`**: Monthly rate (default: `1 + (.03 / 12)`).
--   **`loan_cap`**: Maximum loan amount; 0 disables the cap (default: `tmax`).
--   **Churn Rate**: Default is 0.01, implying agents review their situation roughly every 100 months.
-
-**Why These Changes Matter:**
-
--   **Economic Realism**: Agents now consider debt repayment, increasing model realism.
--   **Model Stability**: Prevents runaway debt accumulation.
--   **Policy Analysis**: Allows for analysis of debt limitations on agent behavior.
-
-Experiment with `debt_awareness` and other loan settings to observe their impact.

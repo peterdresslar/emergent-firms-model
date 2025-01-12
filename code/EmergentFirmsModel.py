@@ -1,5 +1,6 @@
 # coding: utf-8
 
+# comment from PDD:
 # disable ruff E701 for this file, keeping style consistent with original code
 # ruff: noqa: E701
 
@@ -25,6 +26,7 @@ import pandas
 from scipy.optimize import minimize_scalar
 from scipy.stats import truncnorm
 import json
+import os
 import numpy as np
 
 ######################################################################################################################
@@ -33,8 +35,11 @@ import numpy as np
 ######################################################################################################################
 
 # csv file name
-directory = './data/' # TODO: change this to the directory where you want to save the data
-experiment = 'N600t500r20lendingrate3' # example experiment name
+# PDD: new path variable -- the directory where the data will be saved
+path = './data/'
+
+# experiment name controls file naming. set this to a value if you want to simply run from here.
+experiment = 'N600t500lendingrate3'
 
 # number of model time steps
 tmax = 500
@@ -614,16 +619,30 @@ def generate_economic_census(agents, t, F):
     }
     
     return [census_data]
+
 ######################################################################################################################
 # action is the main function that operates the model
 # function containing main body of code 
 ######################################################################################################################
 
-def action(parameters, agentHistory):
+def action(parameters, path, experiment):
+    print("Model called with parameters: ", parameters, "\n path: ", path, "\n experiment: ", experiment)
+    # set up column names
+    param_names = ['N', 'churn', 'cost', 'multiplier', 'savingrate', 'sigma', 'lending', 'lendingrate', 't']
+    column_names = param_names + ['id', 'omega', 'theta', 'links', 'component', 'a', 'b', 'beta', 'rate', 'U_self', 
+                              'e_self', 'e_star',
+                              'firm', 'wage', 'savings', 'loan', 'borrow', 'startup', 'move', 'thwart', 'go']
+    
+    # unpack parameters
     N, churn, cost, multiplier, savingrate, sigma, lending, lendingrate = parameters
+    
+    # initialize agentHistory
+    rows = N * tmax  # total rows = one row per agent, per time step
+    agentHistory = numpy.empty((rows, 30)) # parameter string with time + 21 agent attributes
+
+    # model setup (original model code)
     move_rate = cost
     startup_rate = multiplier * cost
-    
     X = 0 if sigma == 0 else truncnorm((0 - savingrate) / sigma, (1 - savingrate) / sigma, loc=savingrate, scale=sigma)
     
     agents = create_agents(N, savingrate, sigma, X)
@@ -673,15 +692,34 @@ def action(parameters, agentHistory):
         census_history.append(generate_economic_census(agents, t, F))
     
     # After the main loop finishes, serialize the events to JSON
-    with open(directory + experiment + "_events.json", "w") as f:
+    with open(path + experiment + "_events.json", "w") as f:
         json.dump(events_log, f, indent=2)
     
     # Convert the history logs to pandas DataFrames and save them to CSV
     firms_history_df = pandas.concat([pandas.DataFrame(x) for x in firms_history])
-    firms_history_df.to_csv(directory + experiment + "_firms.csv", index=False, float_format=lambda x: f'{x:.12f}'.rstrip('0').rstrip('.'))
+    firms_output_file = path + experiment + "_firms.csv"
+    #overwrite existing file if it exists
+    if os.path.exists(firms_output_file):
+        os.remove(firms_output_file)
+    firms_history_df.to_csv(firms_output_file, index=False, float_format=lambda x: f'{x:.12f}'.rstrip('0').rstrip('.'))
     
     census_history_df = pandas.concat([pandas.DataFrame(x) for x in census_history])
-    census_history_df.to_csv(directory + experiment + "_census.csv", index=False, float_format=lambda x: f'{x:.12f}'.rstrip('0').rstrip('.'))
+    census_history_df.to_csv(path + experiment + "_census.csv", index=False, float_format=lambda x: f'{x:.12f}'.rstrip('0').rstrip('.'))
+
+    # initialize agentHistoryDF and send it to csv
+    column_names = param_names + ['id', 'omega', 'theta', 'links', 'component', 'a', 'b', 'beta', 'rate', 'U_self', 
+                              'e_self', 'e_star',
+                              'firm', 'wage', 'savings', 'loan', 'borrow', 'startup', 'move', 'thwart', 'go']
+    agentHistoryDF = pandas.DataFrame(agentHistory, columns = column_names)
+    agentHistoryDF.to_csv(path + experiment + '.csv', index=False, float_format=lambda x: f'{x:.12f}'.rstrip('0').rstrip('.'))
+
+    # Format node attributes before writing GML
+    for node in F.nodes():
+        for attr in ['savings', 'wage', 'loan']:
+            if attr in F.nodes[node]:
+                F.nodes[node][attr] = f'{float(F.nodes[node][attr]):.12f}'.rstrip('0').rstrip('.')
+
+    nx.write_gml(F, path + experiment + '.gml')
     
     return(F, agentHistory)
 
@@ -689,25 +727,6 @@ def action(parameters, agentHistory):
 # experiment wrapper, set up this way to facilitate multi-run modifications
 ######################################################################################################################
 
-parameters = [N, churn, cost, multiplier, savingrate, sigma, lending, lendingrate]
-param_names = ['N', 'churn', 'cost', 'multiplier', 'savingrate', 'sigma', 'lending', 'lendingrate', 't']
-rows = N * tmax
-agentHistory = numpy.empty((rows, 30)) # parameter string with time + 21 agent attributes
-
-F, agentHistory = action(parameters, agentHistory)
-
-column_names = param_names + ['id', 'omega', 'theta', 'links', 'component', 'a', 'b', 'beta', 'rate', 'U_self', 
-                              'e_self', 'e_star',
-                              'firm', 'wage', 'savings', 'loan', 'borrow', 'startup', 'move', 'thwart', 'go']
-agentHistoryDF = pandas.DataFrame(agentHistory, columns = column_names)
-agentHistoryDF.to_csv(directory + experiment + '.csv', index=False, float_format=lambda x: f'{x:.12f}'.rstrip('0').rstrip('.'))
-
-# Format node attributes before writing GML
-for node in F.nodes():
-    for attr in ['savings', 'wage', 'loan']:
-        if attr in F.nodes[node]:
-            F.nodes[node][attr] = f'{float(F.nodes[node][attr]):.12f}'.rstrip('0').rstrip('.')
-
-nx.write_gml(F, directory + experiment + '.gml')
-
-
+if __name__ == "__main__":
+    parameters = [N, churn, cost, multiplier, savingrate, sigma, lending, lendingrate]
+    F, agentHistory = action(parameters, path, experiment)
