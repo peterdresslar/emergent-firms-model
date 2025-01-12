@@ -31,7 +31,6 @@ An example sim definition file is provided in the sims/ directory.
 
 import argparse
 import json
-import sys
 from pathlib import Path
 import importlib.util
 
