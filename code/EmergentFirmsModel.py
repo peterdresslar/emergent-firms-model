@@ -7,7 +7,7 @@
 ######################################################################################################################
 # Emergent Firm Model
 # May 20, 2018
-#J M Applegate
+# J M Applegate
 ######################################################################################################################
 # This code will run a single simulation of the Emergent Firm Model with the parameters specified.
 # Firm data for each timestep is saved in a .csv file, and a network graph representing final economy structure
