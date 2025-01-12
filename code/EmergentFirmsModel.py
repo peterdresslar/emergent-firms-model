@@ -131,7 +131,7 @@ def singleton_utility(agent):
 ######################################################################################################################
 # decision functions
 ######################################################################################################################
-def decide(i, agents, F, S, move_cost, startup_cost, lending):
+def decide(i, agents, F, S, move_cost, startup_cost, lending, debt_awareness, loan_repayment_lookahead):
     firm = agents[i]['firm']
     wage = agents[i]['wage']
     savings = agents[i]['savings']
@@ -142,7 +142,7 @@ def decide(i, agents, F, S, move_cost, startup_cost, lending):
     A = list(nx.node_connected_component(F, i))
     if i in A: A.remove(i) #other current firm members
     
-    e_other, U_other, firm_other, other_log_entry = other_utility(i, agents, F, S, A)
+    e_other, U_other, firm_other, other_log_entry = other_utility(i, agents, F, S, A, lending, debt_awareness, loan_repayment_lookahead)
     
     log_entry = {
         "agent_id": i,
@@ -276,7 +276,7 @@ def decide(i, agents, F, S, move_cost, startup_cost, lending):
     
     return(e_star, firm, log_entry)
 
-def other_utility(i, agents, F, S, A):
+def other_utility(i, agents, F, S, A, lendingrate, debt_awareness, loan_repayment_lookahead):
     B = list(S.neighbors(i)) # Network is created with at least two links per node.
     C = [a for a in B if a not in A]
     U, e_star, firm, e_trial, U_trial = 0, 0, 0, 0, 0
@@ -625,20 +625,20 @@ def generate_economic_census(agents, t, F):
 # function containing main body of code 
 ######################################################################################################################
 
-def action(parameters, path, experiment):
-    print("Model called with parameters: ", parameters, "\n path: ", path, "\n experiment: ", experiment)
+def action(parameters, tmax, path, experiment):
+    print("Model called with parameters: ", parameters, "\n tmax: ", tmax, "\n path: ", path, "\n experiment: ", experiment)
     # set up column names
-    param_names = ['N', 'churn', 'cost', 'multiplier', 'savingrate', 'sigma', 'lending', 'lendingrate', 't']
+    param_names = ['N', 'churn', 'cost', 'multiplier', 'savingrate', 'sigma', 'lending', 'lendingrate', 'debt_awareness', 'loan_repayment_lookahead', 't']
     column_names = param_names + ['id', 'omega', 'theta', 'links', 'component', 'a', 'b', 'beta', 'rate', 'U_self', 
                               'e_self', 'e_star',
                               'firm', 'wage', 'savings', 'loan', 'borrow', 'startup', 'move', 'thwart', 'go']
     
     # unpack parameters
-    N, churn, cost, multiplier, savingrate, sigma, lending, lendingrate = parameters
+    N, churn, cost, multiplier, savingrate, sigma, lending, lendingrate, debt_awareness, loan_repayment_lookahead = parameters
     
     # initialize agentHistory
     rows = N * tmax  # total rows = one row per agent, per time step
-    agentHistory = numpy.empty((rows, 30)) # parameter string with time + 21 agent attributes
+    agentHistory = numpy.empty((rows, 32)) # parameter string with time + 21 agent attributes. very important: the 32 is number of cols
 
     # model setup (original model code)
     move_rate = cost
@@ -666,7 +666,7 @@ def action(parameters, path, experiment):
             agents[i]['go'] = 1
             firm = agents[i]['firm']
             # Unpack all three return values from decide
-            agents[i]['e_star'], new_firm, log_entry = decide(i, agents, F, S, move_rate, startup_rate, lending)
+            agents[i]['e_star'], new_firm, log_entry = decide(i, agents, F, S, move_rate, startup_rate, lending, debt_awareness, loan_repayment_lookahead)
             log_entry["time"] = t  # Add the time to the log entry
             if new_firm != firm: 
                 A = nx.node_connected_component(F, i)
@@ -728,5 +728,17 @@ def action(parameters, path, experiment):
 ######################################################################################################################
 
 if __name__ == "__main__":
-    parameters = [N, churn, cost, multiplier, savingrate, sigma, lending, lendingrate]
-    F, agentHistory = action(parameters, path, experiment)
+    parameters = [
+        N,                # 0
+        churn,            # 1
+        cost,             # 2
+        multiplier,       # 3
+        savingrate,       # 4
+        sigma,            # 5
+        lending,          # 6
+        lendingrate,      # 7
+        # new loan-related parameters
+        debt_awareness,   # 8
+        loan_repayment_lookahead, # 9
+    ]
+    F, agentHistory = action(parameters, tmax, path, experiment)
