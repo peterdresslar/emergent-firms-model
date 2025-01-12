@@ -55,6 +55,8 @@ This new version also includes the following analysis products:
     - View time series charts of various agent attributes, including `wage`, `savings`, `loan`, `a`, `beta`, `links`, `component`, `rate`, `U_self`, `e_self`, and `e_star`.
     - View binary attributes such as `startup`, `thwart`, `borrow`, `move`, and `go` as time series.
     - The notebook uses `pandas` to load the CSV data, `matplotlib` for plotting, and `ipywidgets` for interactivity.
+- **Event Logging:** The model now generates an event log by default that gives extensive detail on decisioning. However, the code for this is quite verbose and I would like to clean it up in a future iteration.
+
 
 ## Original Model
 
@@ -73,16 +75,6 @@ The codebase includes very minor updates for compatibility with Python environme
 - Updated NetworkX syntax for node attribute access
 - Modified numpy type declarations
 - Updated package requirements for Python 3.11+ compatibility
-
-## Known Issues
-
-- **Loan Decision Gap:** Version 1.0 of the model has a significant limitation in its lending mechanism. Agents make borrowing decisions based on immediate utility maximization without considering the long-term consequences of debt. Specifically:
-    - The `optimize_e` function does not take into account the loan burden or the potential for runaway debt.
-    - The `decide` function allows agents to borrow if they have insufficient savings, but it does not consider their ability to repay the loan.
-    - This leads to a situation where some agents get caught in a debt spiral, and overall utility decreases across the model.
-    - This issue is consistent across multiple runs, indicating a systemic flaw in the model's design.
-    - This issue will be addressed in future versions of the model.
-    - We point out this issue aware that the original version by the author may not be the author's final revision, or may not be an attempt at a full simulation--but rather a straightforward demonstration of the techniques involved.
 
 ## Requirements
 python
