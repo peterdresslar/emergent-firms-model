@@ -627,6 +627,11 @@ def generate_economic_census(agents, t, F):
 
 def action(parameters, tmax, path, experiment):
     print("Model called with parameters: ", parameters, "\n tmax: ", tmax, "\n path: ", path, "\n experiment: ", experiment)
+    
+    # Create experiment-specific directory
+    experiment_path = os.path.join(path, experiment)
+    os.makedirs(experiment_path, exist_ok=True)
+    
     # set up column names
     param_names = ['N', 'churn', 'cost', 'multiplier', 'savingrate', 'sigma', 'lending', 'lendingrate', 'debt_awareness', 'loan_repayment_lookahead', 't']
     param_count = len(param_names)
@@ -696,23 +701,23 @@ def action(parameters, tmax, path, experiment):
         census_history.append(generate_economic_census(agents, t, F))
     
     # After the main loop finishes, serialize the events to JSON
-    with open(path + experiment + "_events.json", "w") as f:
+    with open(os.path.join(experiment_path, "events.json"), "w") as f:
         json.dump(events_log, f, indent=2)
     
     # Convert the history logs to pandas DataFrames and save them to CSV
     firms_history_df = pandas.concat([pandas.DataFrame(x) for x in firms_history])
-    firms_output_file = path + experiment + "_firms.csv"
+    firms_output_file = os.path.join(experiment_path, "firms.csv")
     #overwrite existing file if it exists
     if os.path.exists(firms_output_file):
         os.remove(firms_output_file)
     firms_history_df.to_csv(firms_output_file, index=False, float_format=lambda x: f'{x:.12f}'.rstrip('0').rstrip('.'))
     
     census_history_df = pandas.concat([pandas.DataFrame(x) for x in census_history])
-    census_history_df.to_csv(path + experiment + "_census.csv", index=False, float_format=lambda x: f'{x:.12f}'.rstrip('0').rstrip('.'))
+    census_history_df.to_csv(os.path.join(experiment_path, "census.csv"), index=False, float_format=lambda x: f'{x:.12f}'.rstrip('0').rstrip('.'))
 
     # initialize agentHistoryDF and send it to csv
     agentHistoryDF = pandas.DataFrame(agentHistory, columns = column_names)
-    agentHistoryDF.to_csv(path + experiment + '.csv', index=False, float_format=lambda x: f'{x:.12f}'.rstrip('0').rstrip('.'))
+    agentHistoryDF.to_csv(os.path.join(experiment_path, 'agents.csv'), index=False, float_format=lambda x: f'{x:.12f}'.rstrip('0').rstrip('.'))
 
     # Format node attributes before writing GML
     for node in F.nodes():
@@ -720,7 +725,7 @@ def action(parameters, tmax, path, experiment):
             if attr in F.nodes[node]:
                 F.nodes[node][attr] = f'{float(F.nodes[node][attr]):.12f}'.rstrip('0').rstrip('.')
 
-    nx.write_gml(F, path + experiment + '.gml')
+    nx.write_gml(F, os.path.join(experiment_path, 'network.gml'))
     
     return(F, agentHistory)
 
