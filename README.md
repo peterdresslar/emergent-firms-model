@@ -32,29 +32,11 @@ This repository contains analysis and extensions of the Emergent Firms Model ori
   - Disabled by default
   - Prevents runaway debt scenarios
 
-These enhancements make the model more realistic by implementing practical lending constraints and allowing experimentation with different debt awareness scenarios.
-
-## Original Model
-
-The original version of this model is preserved in the `original-v1.0.0` branch. This represents the initial implementation as uploaded to CoMSES/OpenABM and serves as a reference point for all subsequent development. 
-
-The `main` branch contains subsequent modifications by the maintainer of this repo, @peterdresslar.
-
-The original model was developed by J M Applegate and is available on [CoMSES](https://www.comses.net). The model explores how economies and firms emerge from individual agent behaviors, incorporating:
-- Returns-to-scale benefits
-- Coordination advantages
-- Cash-in-advance constraints
-- Universal credit-creating lending mechanisms
-
-## Technical Updates
-The codebase includes very minor updates for compatibility with Python environments >= v3.11:
-- Updated NetworkX syntax for node attribute access
-- Modified numpy type declarations
-- Updated package requirements for Python 3.11+ compatibility
+These enhancements make the model behave differently by implementing practical lending constraints and allowing experimentation with different debt awareness scenarios.
 
 ## Analysis Tools
 
-This repository includes the following analysis tools:
+This new version also includes the following analysis products:
 
 - **`visualize_network_static.py`**: This script generates a static visualization of the network structure from a GML file. The visualization includes:
     - A main subplot showing the connected firms and workers, with node size representing the number of employees (in-degree) and node color representing the net worth (savings - loans) using a `SymLogNorm` colormap.
@@ -73,6 +55,24 @@ This repository includes the following analysis tools:
     - View time series charts of various agent attributes, including `wage`, `savings`, `loan`, `a`, `beta`, `links`, `component`, `rate`, `U_self`, `e_self`, and `e_star`.
     - View binary attributes such as `startup`, `thwart`, `borrow`, `move`, and `go` as time series.
     - The notebook uses `pandas` to load the CSV data, `matplotlib` for plotting, and `ipywidgets` for interactivity.
+
+## Original Model
+
+The original version of this model is preserved in the `original-v1.0.0` branch. This represents the initial implementation as uploaded to CoMSES/OpenABM and serves as a reference point for all subsequent development. 
+
+The `main` branch contains subsequent modifications by the maintainer of this repo, @peterdresslar.
+
+The original model was developed by J M Applegate and is available on [CoMSES](https://www.comses.net). The model explores how economies and firms emerge from individual agent behaviors, incorporating:
+- Returns-to-scale benefits
+- Coordination advantages
+- Cash-in-advance constraints
+- Universal credit-creating lending mechanisms
+
+## Technical Updates
+The codebase includes very minor updates for compatibility with Python environments >= v3.11:
+- Updated NetworkX syntax for node attribute access
+- Modified numpy type declarations
+- Updated package requirements for Python 3.11+ compatibility
 
 ## Known Issues
 

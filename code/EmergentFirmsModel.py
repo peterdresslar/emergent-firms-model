@@ -629,16 +629,19 @@ def action(parameters, tmax, path, experiment):
     print("Model called with parameters: ", parameters, "\n tmax: ", tmax, "\n path: ", path, "\n experiment: ", experiment)
     # set up column names
     param_names = ['N', 'churn', 'cost', 'multiplier', 'savingrate', 'sigma', 'lending', 'lendingrate', 'debt_awareness', 'loan_repayment_lookahead', 't']
+    param_count = len(param_names)
+    
     column_names = param_names + ['id', 'omega', 'theta', 'links', 'component', 'a', 'b', 'beta', 'rate', 'U_self', 
                               'e_self', 'e_star',
                               'firm', 'wage', 'savings', 'loan', 'borrow', 'startup', 'move', 'thwart', 'go']
-    
+    column_count = len(column_names)
+
     # unpack parameters
     N, churn, cost, multiplier, savingrate, sigma, lending, lendingrate, debt_awareness, loan_repayment_lookahead = parameters
     
     # initialize agentHistory
     rows = N * tmax  # total rows = one row per agent, per time step
-    agentHistory = numpy.empty((rows, 32)) # parameter string with time + 21 agent attributes. very important: the 32 is number of cols
+    agentHistory = numpy.empty((rows, column_count)) # parameter string with time + 21 agent attributes.
 
     # model setup (original model code)
     move_rate = cost
@@ -683,8 +686,9 @@ def action(parameters, tmax, path, experiment):
         distribute_output(agents, F)
         if lending: pay_loans(N, agents, lendingrate)
         params = parameters + [t]
-        agentHistory[loc:loc+N,0:9] = numpy.tile(params,(N, 1))
-        agentHistory[loc:loc+N,9:] = numpy.array([list(v.values()) for v in agents.values()])
+        # use counts instead of indices to avoid errors
+        agentHistory[loc:loc+N,0:param_count] = numpy.tile(params,(N, 1))
+        agentHistory[loc:loc+N,param_count:] = numpy.array([list(v.values()) for v in agents.values()])
         loc += N
         
         # Generate and store the reports
@@ -707,9 +711,6 @@ def action(parameters, tmax, path, experiment):
     census_history_df.to_csv(path + experiment + "_census.csv", index=False, float_format=lambda x: f'{x:.12f}'.rstrip('0').rstrip('.'))
 
     # initialize agentHistoryDF and send it to csv
-    column_names = param_names + ['id', 'omega', 'theta', 'links', 'component', 'a', 'b', 'beta', 'rate', 'U_self', 
-                              'e_self', 'e_star',
-                              'firm', 'wage', 'savings', 'loan', 'borrow', 'startup', 'move', 'thwart', 'go']
     agentHistoryDF = pandas.DataFrame(agentHistory, columns = column_names)
     agentHistoryDF.to_csv(path + experiment + '.csv', index=False, float_format=lambda x: f'{x:.12f}'.rstrip('0').rstrip('.'))
 
