@@ -88,6 +88,8 @@ lendingrate = round(.03/12, 4)  # Monthly compound interest rate (3% APR)
 # a zero value will remove the cap
 # loan_cap = tmax 
 
+
+
 ######################################################################################################################
 # function definitions
 ######################################################################################################################
@@ -376,9 +378,9 @@ def verify_optimize_e(agents, F, i):
     # Compare results
     narrative = f"Verification for agent {i}, firm {firm_id}: "
     if abs(expected_e_star - optimized_e_star) < 0.001:
-        narrative += f"optimize_e is working correctly. "
+        narrative += "optimize_e is working correctly. "
     else:
-        narrative += f"optimize_e is NOT working correctly. "
+        narrative += "optimize_e is NOT working correctly. "
     narrative += f"Expected e_star: {expected_e_star:.4f}, Optimized e_star: {optimized_e_star:.4f}. "
     
     return {
@@ -612,7 +614,8 @@ def generate_economic_census(agents, t, F):
     }
     
     return [census_data]
-
+######################################################################################################################
+# action is the main function that operates the model
 # function containing main body of code 
 ######################################################################################################################
 
