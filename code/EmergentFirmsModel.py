@@ -28,7 +28,7 @@ from scipy.stats import truncnorm
 import json
 import os
 import numpy as np
-
+from datetime import datetime
 ######################################################################################################################
 # model parameter settings
 # change these at will
@@ -629,8 +629,8 @@ def generate_economic_census(agents, t, F):
 def action(parameters, tmax, path, experiment):
     print("Model called with parameters: ", parameters, "\n tmax: ", tmax, "\n path: ", path, "\n experiment: ", experiment)
     
-    # Create experiment-specific directory
-    experiment_path = os.path.join(path, experiment)
+    # Create experiment-specific directory with a date-time stamp (use an underscore between experiment and datetimestamp)
+    experiment_path = os.path.join(path, experiment + "_" + datetime.now().strftime("%Y-%m-%d_%H-%M-%S"))
     os.makedirs(experiment_path, exist_ok=True)
     
     # set up column names
