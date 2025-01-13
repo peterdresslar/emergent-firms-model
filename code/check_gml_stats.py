@@ -1,6 +1,6 @@
 import networkx as nx
 
-G = nx.read_gml("./data/N600t500r20lendingrate3.gml")
+G = nx.read_gml("../data/N600t500r20lendingrate3.gml")
 G = nx.DiGraph(G)
 
 

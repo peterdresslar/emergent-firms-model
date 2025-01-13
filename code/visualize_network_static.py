@@ -133,5 +133,5 @@ def visualize_network(gml_path):
     plt.close()
 
 if __name__ == "__main__":
-    gml_path = "./data/N600t500r20lendingrate3.gml"
+    gml_path = "../data/N600t500r20lendingrate3.gml"
     visualize_network(gml_path)
