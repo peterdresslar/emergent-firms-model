@@ -40,3 +40,6 @@ coverage/
 !/data/.gitkeep
 /code/data/*
 !/code/data/.gitkeep
+
+!/code/sims/experiment_example.json
+/code/sims/*
