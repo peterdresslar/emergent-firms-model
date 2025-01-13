@@ -124,8 +124,12 @@ The model will generate (by default in the working directory):
 - A CSV file containing the firm history
 - A CSV file containing the economic census
 
-## License
-This work is derived from code licensed under CC-BY-NC (Creative Commons Attribution-NonCommercial).
+## Attribution
+
+   This project builds upon work licensed under [CC-BY-4.0](https://creativecommons.org/licenses/by/4.0/) from [CoMSES Network](https://www.comses.net).
+
+   - **Original Work**: https://www.comses.net/codebases/9e802c7e-20e5-4448-bb24-12e1b019ea98/releases/1.0.0/
+   - **Original Author**: J. M. Applegate
 
 ## Acknowledgments
 This work builds upon the Emergent Firms Model developed by J M Applegate, which itself extends concepts from Rob Axtell's Endogenous Dynamics of Multi-Agent Firms model. Please see the original documentation and CoMSES-specific metadata in `/docs` for more information.

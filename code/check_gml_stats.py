@@ -3,7 +3,6 @@ import networkx as nx
 G = nx.read_gml("../data/N600t500r20lendingrate3.gml")
 G = nx.DiGraph(G)
 
-
 max_employees = max(dict(G.in_degree()).values())
 print(f"Maximum number of employees (in_degree): {max_employees}")
 

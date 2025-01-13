@@ -302,10 +302,11 @@ def other_utility(i, agents, F, S, A, lendingrate, debt_awareness, loan_repaymen
         # Check the flag for debt_awareness first! If debt_awareness is True, the model skips the evaluation.
         # Note this flag is model-wide, not per-agent.
         if debt_awareness:
-            if can_repay_loan(agents[i], agents[trial]['wage'], agents[i]['loan'], lendingrate, loan_repayment_lookahead):
-                log_entry["narrative"] += f"Agent {i} can repay loan at rate {lendingrate} with expected wage from firm {trial}."
+            amount_to_borrow = cost * multiplier # TODO this is a hack for now, selecting which size loan is problem since we are optimizing *using* this check
+            if can_repay_loan(agents[i], agents[trial]['wage'], amount_to_borrow, lendingrate, loan_repayment_lookahead):
+                log_entry["narrative"] += f"Agent {i} can repay loan at rate {lendingrate} with expected wage from firm {trial} within {loan_repayment_lookahead} steps."
             else:
-                log_entry["narrative"] += f"Agent {i} cannot repay loan at rate {lendingrate} with expected wage from firm {trial}."
+                log_entry["narrative"] += f"Agent {i} cannot repay loan at rate {lendingrate} with expected wage from firm {trial} within {loan_repayment_lookahead} steps."
                 continue
 
         D = list(nx.node_connected_component(F, j))
@@ -398,7 +399,17 @@ def verify_optimize_e(agents, F, i):
     }
 
 def can_repay_loan(agent, expected_wage, cost, lendingrate, loan_repayment_lookahead):
-    return agent['savings'] + expected_wage * loan_repayment_lookahead >= cost * (1 + lendingrate) ** loan_repayment_lookahead
+    """
+    Return True if the agent can repay `cost` within loan_repayment_lookahead steps,
+    given the cost, interest rate, and expected future wage.
+    """
+    # Possibly the simplest logic:
+    #   agent['savings'] + expected_wage * lookahead >= total_debt * (1 + lendingrate)^lookahead
+    return (
+        agent['savings'] 
+        + (expected_wage * loan_repayment_lookahead)
+        >= cost * (1 + lendingrate) ** loan_repayment_lookahead
+    )
 
 ######################################################################################################################
 # utility functions
