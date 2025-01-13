@@ -45,6 +45,7 @@ experiment = 'N600t500lendingrate3'
 tmax = 500
 
 # mininmum and maximum degree of social network
+# NOTE: right now these are somewhat hard-wired into the model--they do not get passed as parameters
 mindegree = 2
 maxdegree = 6
 
