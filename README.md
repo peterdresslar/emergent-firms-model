@@ -57,6 +57,32 @@ This new version also includes the following analysis products:
     - The notebook uses `pandas` to load the CSV data, `matplotlib` for plotting, and `ipywidgets` for interactivity.
 - **Event Logging:** The model now generates an event log by default that gives extensive detail on decisioning. However, the code for this is quite verbose and I would like to clean it up in a future iteration.
 
+## Introducing Sim Control
+
+The `sim_control.py` script provides a control plane for running simulations. It allows you to:
+
+- Run single or multiple simulations defined in JSON files.
+- Specify simulation parameters and configurations.
+- Automate large-scale simulation tasks.
+
+To use `sim_control.py`, you can either:
+
+1.  Provide a single simulation definition file:
+    ```bash
+    python sim_control.py --sim_def <path_to_sim_def.json>
+    ```
+2.  Provide multiple simulation definition files:
+    ```bash
+    python sim_control.py --sim_defs <path_to_sim_def1.json> <path_to_sim_def2.json> ...
+    ```
+3.  Provide a single simulation definition file as a positional argument:
+    ```bash
+    python sim_control.py <path_to_sim_def.json>
+    ```
+
+An example simulation definition file is provided in the `sims/` directory.
+
+Please note that sim control is a work in progress.
 
 ## Original Model
 

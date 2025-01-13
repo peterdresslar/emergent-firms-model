@@ -1,24 +1,25 @@
 {
     "sim_name": "example_sim",
-    "is_multi_sim": true,
     "sims": [
         {
-            "sim_name": "debt_aware_sim",
+            "model_name": "EmergentFirmsModel",
+            "run_name": "debt_aware_sim",
+            "sim_steps": 500,
             "sim_params": {
                 "debt_awareness": true,
-                "loan_term": 12,
-                "loan_cap": 1000000
+                "loan_repayment_lookahead": 12
             },
-            "sim_runs": 10
+            "sim_runs": 2
         },
         {
-            "sim_name": "debt_naive_sim",
+            "model_name": "EmergentFirmsModel",
+            "run_name": "debt_naive_sim",
+            "sim_steps": 500,
             "sim_params": {
                 "debt_awareness": false,
-                "loan_term": 12,
-                "loan_cap": 1000000
+                "loan_repayment_lookahead": 12
             },
-            "sim_runs": 10
+            "sim_runs": 2
         }
     ]
 }
