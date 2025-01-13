@@ -71,6 +71,12 @@ PARAMETERS = [
         "default": 12,
         "description": "Number of steps an agent looks ahead to ensure they can repay a new loan",
     },
+    {
+        "name": "loan_risk_factor",
+        "type": int,
+        "default": 80,
+        "description": "Percentage of expected wage that the agent assumes they can pay each step",
+    },
 ]
 
 if __name__ == "__main__":

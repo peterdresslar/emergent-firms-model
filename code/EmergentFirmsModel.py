@@ -77,17 +77,23 @@ lending = 1
 # Set to False to simulate behavior from the original model.
 debt_awareness = True 
 
-# loan_repayment_lookahead: This lookahead behaves like a loan term. 
-# Agent uses this to determine if they can repay a loan in the specified time.
-# Higher values should essentially equate to higher risk tolerance, as an external change
-# during repayment could cause the agent to be unable to repay.
-loan_repayment_lookahead = 12
-
 # lending rate (previous)
 # lendingrate = .03
 # We set the lending rate to a more likely "monthly" rate, as the default churn setting 
 # seems analogous to a monthly churn rate.
 lendingrate = .03  # Monthly compound interest rate (3% APR)
+
+# loan_repayment_lookahead: This lookahead behaves like a loan term. 
+# Agent uses this to determine if they can repay a loan in the specified time.
+# Higher values should essentially equate to higher risk tolerance, as an external change
+# during repayment could cause the agent to be unable to repay.
+loan_repayment_lookahead = 52
+
+# loan_risk_factor: The fraction of the expected wage that the agent assumes they can pay each step.
+# This is used to determine if the agent can repay a loan in the specified time. 
+# This is a percentage, 20 is the default value meaning the agent assumes 20 precent of the wage is at risk
+# Bigger numbers mean more wage risk, which means less likely to borrow.
+loan_risk_factor = 20
 
 # loan_cap: Maximum total loan amount, set somewhat arbitrarily to tmax
 # avoid runaway loans which could distort the population metrics
@@ -132,7 +138,7 @@ def singleton_utility(agent):
 ######################################################################################################################
 # decision functions
 ######################################################################################################################
-def decide(i, agents, F, S, move_cost, startup_cost, lending, lendingrate, debt_awareness, loan_repayment_lookahead):
+def decide(i, agents, F, S, move_cost, startup_cost, lending, lendingrate, debt_awareness, loan_repayment_lookahead, loan_risk_factor):
     firm = agents[i]['firm']
     wage = agents[i]['wage']
     savings = agents[i]['savings']
@@ -143,7 +149,7 @@ def decide(i, agents, F, S, move_cost, startup_cost, lending, lendingrate, debt_
     A = list(nx.node_connected_component(F, i))
     if i in A: A.remove(i) #other current firm members
     
-    e_other, U_other, firm_other, other_log_entry = other_utility(i, agents, F, S, A, lendingrate, debt_awareness, loan_repayment_lookahead)
+    e_other, U_other, firm_other, other_log_entry = other_utility(i, agents, F, S, A, lendingrate, debt_awareness, loan_repayment_lookahead, loan_risk_factor)
     
     log_entry = {
         "agent_id": i,
@@ -277,7 +283,7 @@ def decide(i, agents, F, S, move_cost, startup_cost, lending, lendingrate, debt_
     
     return(e_star, firm, log_entry)
 
-def other_utility(i, agents, F, S, A, lendingrate, debt_awareness, loan_repayment_lookahead):
+def other_utility(i, agents, F, S, A, lendingrate, debt_awareness, loan_repayment_lookahead, loan_risk_factor):
     B = list(S.neighbors(i)) # Network is created with at least two links per node.
     C = [a for a in B if a not in A]
     U, e_star, firm, e_trial, U_trial = 0, 0, 0, 0, 0
@@ -303,7 +309,7 @@ def other_utility(i, agents, F, S, A, lendingrate, debt_awareness, loan_repaymen
         # Note this flag is model-wide, not per-agent.
         if debt_awareness:
             amount_to_borrow = cost * multiplier # TODO this is a hack for now, selecting which size loan is problem since we are optimizing *using* this check
-            if can_repay_loan(agents[i], agents[trial]['wage'], amount_to_borrow, lendingrate, loan_repayment_lookahead):
+            if can_repay_loan(agents[i], agents[trial]['wage'], amount_to_borrow, lendingrate, loan_repayment_lookahead, loan_risk_factor):
                 log_entry["narrative"] += f"Agent {i} can repay loan at rate {lendingrate} with expected wage from firm {trial} within {loan_repayment_lookahead} steps."
             else:
                 log_entry["narrative"] += f"Agent {i} cannot repay loan at rate {lendingrate} with expected wage from firm {trial} within {loan_repayment_lookahead} steps."
@@ -398,18 +404,29 @@ def verify_optimize_e(agents, F, i):
         "narrative": narrative
     }
 
-def can_repay_loan(agent, expected_wage, cost, lendingrate, loan_repayment_lookahead):
+def can_repay_loan(agent, expected_wage, cost, lendingrate, loan_repayment_lookahead, loan_risk_factor):
     """
-    Return True if the agent can repay `cost` within loan_repayment_lookahead steps,
-    given the cost, interest rate, and expected future wage.
+    The agent simulates paying down the loan for up to 
+    `loan_repayment_lookahead` steps. However, each step they only 
+    assume `wage_risk_factor * current_expected_wage`, reflecting 
+    possible firm or wage instability.
     """
-    # Possibly the simplest logic:
-    #   agent['savings'] + expected_wage * lookahead >= total_debt * (1 + lendingrate)^lookahead
-    return (
-        agent['savings'] 
-        + (expected_wage * loan_repayment_lookahead)
-        >= cost * (1 + lendingrate) ** loan_repayment_lookahead
-    )
+    principal = cost - agent['savings']
+    if principal <= 0:
+        return True
+
+    s = agent['rate']
+    conservative_wage = (1 - loan_risk_factor/100) * expected_wage
+
+    for _ in range(loan_repayment_lookahead):
+        # Step accrual
+        principal *= (1 + lendingrate)
+        # Step partial pay
+        principal -= (s * conservative_wage)
+        if principal <= 0:
+            return True
+
+    return principal <= 0
 
 ######################################################################################################################
 # utility functions
@@ -645,7 +662,7 @@ def action(parameters, tmax, path, experiment):
     os.makedirs(experiment_path, exist_ok=True)
     
     # set up column names
-    param_names = ['N', 'churn', 'cost', 'multiplier', 'savingrate', 'sigma', 'lending', 'lendingrate', 'debt_awareness', 'loan_repayment_lookahead', 't']
+    param_names = ['N', 'churn', 'cost', 'multiplier', 'savingrate', 'sigma', 'lending', 'lendingrate', 'debt_awareness', 'loan_repayment_lookahead', 'loan_risk_factor', 't']
     param_count = len(param_names)
     
     column_names = param_names + ['id', 'omega', 'theta', 'links', 'component', 'a', 'b', 'beta', 'rate', 'U_self', 
@@ -654,7 +671,7 @@ def action(parameters, tmax, path, experiment):
     column_count = len(column_names)
 
     # unpack parameters
-    N, churn, cost, multiplier, savingrate, sigma, lending, lendingrate, debt_awareness, loan_repayment_lookahead = parameters
+    N, churn, cost, multiplier, savingrate, sigma, lending, lendingrate, debt_awareness, loan_repayment_lookahead, loan_risk_factor = parameters
     
     # initialize agentHistory
     rows = N * tmax  # total rows = one row per agent, per time step
@@ -686,7 +703,7 @@ def action(parameters, tmax, path, experiment):
             agents[i]['go'] = 1
             firm = agents[i]['firm']
             # Unpack all three return values from decide
-            agents[i]['e_star'], new_firm, log_entry = decide(i, agents, F, S, move_rate, startup_rate, lending, lendingrate, debt_awareness, loan_repayment_lookahead)
+            agents[i]['e_star'], new_firm, log_entry = decide(i, agents, F, S, move_rate, startup_rate, lending, lendingrate, debt_awareness, loan_repayment_lookahead, loan_risk_factor)
             log_entry["time"] = t  # Add the time to the log entry
             if new_firm != firm: 
                 A = nx.node_connected_component(F, i)
@@ -758,5 +775,6 @@ if __name__ == "__main__":
         # new loan-related parameters
         debt_awareness,   # 8
         loan_repayment_lookahead, # 9
+        loan_risk_factor, # 10
     ]
     F, agentHistory = action(parameters, tmax, path, experiment)
