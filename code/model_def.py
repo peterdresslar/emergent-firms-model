@@ -1,11 +1,14 @@
 """
-model_config.py
+model_def.py
 ---------------
 This file defines the configuration parameters for the EmergentFirmsModel. Each parameter
 has metadata about its name, type, default value, and a short description.
 
 You can import and use these definitions in a “run_model.py” or other control-plane modules.
 """
+
+MODEL_NAME = "EmergentFirmsModel"
+MODEL_VERSION = "1.0.1"
 
 PARAMETERS = [
     {
