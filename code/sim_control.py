@@ -38,20 +38,20 @@ import json
 import asyncio
 from run_model import run_model
 
-async def run_simulation(sim_def_path):
+async def run_experiment(sim_def_path):
     """Run a single simulation definition file"""
     with open(sim_def_path) as f:
         simdef = json.load(f)
     
-    print(f"Running simulation(s) defined in {sim_def_path}")
+    print(f"Running experiment(s) defined in {sim_def_path}")
     results = await run_model(simdef)
     return results
 
-async def run_simulations(sim_def_paths):
+async def run_experiments(sim_def_paths):
     """Run multiple simulation definition files"""
     tasks = []
     for sim_def_path in sim_def_paths:
-        tasks.append(run_simulation(sim_def_path))
+        tasks.append(run_experiment(sim_def_path))
     
     results = await asyncio.gather(*tasks)
     return results
@@ -85,7 +85,7 @@ def main():
         return
 
     # Run simulations
-    asyncio.run(run_simulations(sim_def_paths))
+    asyncio.run(run_experiments(sim_def_paths))
 
 if __name__ == "__main__":
     main()

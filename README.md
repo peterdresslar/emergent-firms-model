@@ -61,26 +61,26 @@ This new version also includes the following analysis products:
 
 The `sim_control.py` script provides a control plane for running simulations. It allows you to:
 
-- Run single or multiple simulations defined in JSON files.
-- Specify simulation parameters and configurations.
+- Run single or multiple simulations defined as "experiments" in JSON files.
+- Specify experiment and simulation parameters and configurations.
 - Automate large-scale simulation tasks.
 
 To use `sim_control.py`, you can either:
 
-1.  Provide a single simulation definition file:
+1.  Provide a single experiment definition file:
     ```bash
     python sim_control.py --sim_def <path_to_sim_def.json>
     ```
-2.  Provide multiple simulation definition files:
+2.  Provide multiple experiment definition files:
     ```bash
     python sim_control.py --sim_defs <path_to_sim_def1.json> <path_to_sim_def2.json> ...
     ```
-3.  Provide a single simulation definition file as a positional argument:
+3.  Provide a single experiment definition file as a positional argument:
     ```bash
     python sim_control.py <path_to_sim_def.json>
     ```
 
-An example simulation definition file is provided in the `sims/` directory.
+An example experiment definition file is provided in the `sims/` directory.
 
 Please note that sim control is a work in progress.
 

@@ -24,30 +24,31 @@ async def run_EmergentFirmsModel(parameters=None, tmax=100, path='../data/', exp
     
     return F, agentHistory
 
-async def run_model(simdef, path='../data/'):
-    if not isinstance(simdef, dict):
-        raise ValueError("simdef must be a dictionary")
+async def run_model(expdef, path='../data/'):
+    if not isinstance(expdef, dict):
+        raise ValueError("expdef must be a dictionary")
     
-    # Create base simulation directory with timestamp
-    sim_name = simdef.get("sim_name")
-    sim_path = os.path.join(path, sim_name + "_" + datetime.now().strftime("%Y-%m-%d_%H-%M-%S"))
-    os.makedirs(sim_path, exist_ok=True)
+    # Create base experiment directory with timestamp
+    experiment_name = expdef.get("experiment_name")
+    print(f"🚀 Commencing experiment {experiment_name} 🚀")
+    experiment_path = os.path.join(path, experiment_name + "_" + datetime.now().strftime("%Y-%m-%d_%H-%M-%S"))
+    os.makedirs(experiment_path, exist_ok=True)
         
     # Check if this is a multi-sim configuration
-    if "sims" in simdef:
+    if "sims" in expdef:
         tasks = []
-        for sim in simdef["sims"]:
+        for sim in expdef["sims"]:
             # Check model name for each simulation
             if sim["model_name"] != "EmergentFirmsModel":
                 raise ValueError(f"Model {sim['model_name']} not found")
                 
             # Create tasks for each run of each simulation
             for run_num in range(sim["sim_runs"]):
-                experiment_name = f"{sim['run_name']}_run{run_num}"
+                experiment_name = f"{sim['sim_name']}_run{run_num}"
                 task = run_EmergentFirmsModel(
                     parameters=sim["sim_params"],
                     tmax=sim["sim_steps"],
-                    path=sim_path,
+                    path=experiment_path,
                     experiment=experiment_name
                 )
                 tasks.append(task)
@@ -57,14 +58,14 @@ async def run_model(simdef, path='../data/'):
         return results
     else:
         # Single sim case
-        if simdef.get("model_name") != "EmergentFirmsModel":
-            raise ValueError(f"Model {simdef.get('model_name')} not found")
+        if expdef.get("model_name") != "EmergentFirmsModel":
+            raise ValueError(f"Model {expdef.get('model_name')} not found")
             
         return await run_EmergentFirmsModel(
-            parameters=simdef.get("sim_params"),
-            tmax=simdef["sim_steps"],
-            path=sim_path,
-            experiment=simdef["sim_name"]
+            parameters=expdef.get("sim_params"),
+            tmax=expdef["sim_steps"],
+            path=experiment_path,
+            experiment=expdef["experiment_name"]
         )
 
 if __name__ == "__main__":

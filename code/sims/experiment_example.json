@@ -1,9 +1,9 @@
 {
-    "sim_name": "example_sim",
+    "experiment_name": "example_sim",
     "sims": [
         {
             "model_name": "EmergentFirmsModel",
-            "run_name": "debt_aware_sim",
+            "sim_name": "debt_aware_sim",
             "sim_steps": 500,
             "sim_params": {
                 "debt_awareness": true,
@@ -13,7 +13,7 @@
         },
         {
             "model_name": "EmergentFirmsModel",
-            "run_name": "debt_naive_sim",
+            "sim_name": "debt_naive_sim",
             "sim_steps": 500,
             "sim_params": {
                 "debt_awareness": false,
