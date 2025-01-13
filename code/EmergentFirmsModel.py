@@ -87,7 +87,7 @@ loan_repayment_lookahead = 12
 # lendingrate = .03
 # We set the lending rate to a more likely "monthly" rate, as the default churn setting 
 # seems analogous to a monthly churn rate.
-lendingrate = round(.03/12, 4)  # Monthly compound interest rate (3% APR)
+lendingrate = .03  # Monthly compound interest rate (3% APR)
 
 # loan_cap: Maximum total loan amount, set somewhat arbitrarily to tmax
 # avoid runaway loans which could distort the population metrics
@@ -132,7 +132,7 @@ def singleton_utility(agent):
 ######################################################################################################################
 # decision functions
 ######################################################################################################################
-def decide(i, agents, F, S, move_cost, startup_cost, lending, debt_awareness, loan_repayment_lookahead):
+def decide(i, agents, F, S, move_cost, startup_cost, lending, lendingrate, debt_awareness, loan_repayment_lookahead):
     firm = agents[i]['firm']
     wage = agents[i]['wage']
     savings = agents[i]['savings']
@@ -143,7 +143,7 @@ def decide(i, agents, F, S, move_cost, startup_cost, lending, debt_awareness, lo
     A = list(nx.node_connected_component(F, i))
     if i in A: A.remove(i) #other current firm members
     
-    e_other, U_other, firm_other, other_log_entry = other_utility(i, agents, F, S, A, lending, debt_awareness, loan_repayment_lookahead)
+    e_other, U_other, firm_other, other_log_entry = other_utility(i, agents, F, S, A, lendingrate, debt_awareness, loan_repayment_lookahead)
     
     log_entry = {
         "agent_id": i,
@@ -303,9 +303,9 @@ def other_utility(i, agents, F, S, A, lendingrate, debt_awareness, loan_repaymen
         # Note this flag is model-wide, not per-agent.
         if debt_awareness:
             if can_repay_loan(agents[i], agents[trial]['wage'], agents[i]['loan'], lendingrate, loan_repayment_lookahead):
-                log_entry["narrative"] += f"Agent {i} can repay loan with expected wage from firm {trial}."
+                log_entry["narrative"] += f"Agent {i} can repay loan at rate {lendingrate} with expected wage from firm {trial}."
             else:
-                log_entry["narrative"] += f"Agent {i} cannot repay loan with expected wage from firm {trial}."
+                log_entry["narrative"] += f"Agent {i} cannot repay loan at rate {lendingrate} with expected wage from firm {trial}."
                 continue
 
         D = list(nx.node_connected_component(F, j))
@@ -675,7 +675,7 @@ def action(parameters, tmax, path, experiment):
             agents[i]['go'] = 1
             firm = agents[i]['firm']
             # Unpack all three return values from decide
-            agents[i]['e_star'], new_firm, log_entry = decide(i, agents, F, S, move_rate, startup_rate, lending, debt_awareness, loan_repayment_lookahead)
+            agents[i]['e_star'], new_firm, log_entry = decide(i, agents, F, S, move_rate, startup_rate, lending, lendingrate, debt_awareness, loan_repayment_lookahead)
             log_entry["time"] = t  # Add the time to the log entry
             if new_firm != firm: 
                 A = nx.node_connected_component(F, i)
