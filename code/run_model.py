@@ -2,6 +2,7 @@ import asyncio
 from EmergentFirmsModel import action
 from model_def import MODEL_NAME, MODEL_VERSION, PARAMETERS #noqa
 import os
+import json
 from datetime import datetime
 
 async def run_EmergentFirmsModel(parameters=None, tmax=100, path='../data/', experiment='default'):
@@ -33,6 +34,10 @@ async def run_model(expdef, path='../data/'):
     print(f"🚀 Commencing experiment {experiment_name} 🚀")
     experiment_path = os.path.join(path, experiment_name + "_" + datetime.now().strftime("%Y-%m-%d_%H-%M-%S"))
     os.makedirs(experiment_path, exist_ok=True)
+
+    # copy the expdef to the experiment path
+    with open(os.path.join(experiment_path, "experiment_definition.json"), "w") as f:
+        json.dump(expdef, f)
         
     # Check if this is a multi-sim configuration
     if "sims" in expdef:
