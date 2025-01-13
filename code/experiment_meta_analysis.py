@@ -30,25 +30,21 @@ class ExperimentAnalyzer:
         
         return sim_groups
     
-    def analyze_experiment(self):
-        """Analyze all simulations in the experiment, grouped by simulation type"""
-        results = {
-            'experiment_name': self.experiment_name,
-            'timestamp': datetime.now().isoformat(),
-            'sims': []
-        }
+    def _get_sim_params(self, sim_name, sim_paths):
+        # File is in the experiment directory named experiment_definition.json
+        with open(self.base_path / 'experiment_definition.json', 'r') as f:
+            expdef = json.load(f)
         
-        sim_groups = self._get_sim_groups()
+        # Find the matching simulation in the list
+        for sim in expdef['sims']:
+            if sim['sim_name'] == sim_name:
+                return sim['sim_params']
         
-        # Analyze each simulation type
-        for sim_name, sim_paths in sim_groups.items():
-            sim_results = self._analyze_sim_group(sim_name, sim_paths)
-            results['sims'].append(sim_results)
-            
-        return results
+        raise ValueError(f"Simulation '{sim_name}' not found in experiment definition")
     
-    def _analyze_sim_group(self, sim_name, sim_paths):
+    def _analyze_sim_group(self, sim_name, sim_params, sim_paths):
         """Analyze all runs of a particular simulation type, producing a single summary"""
+
         # Collect all initial and final states
         initial_states = []
         final_states = []
@@ -94,12 +90,31 @@ class ExperimentAnalyzer:
         
         return {
             'sim_name': sim_name,
+            'sim_params': sim_params,
             'runs': len(sim_paths),
             'run_summary': {
                 'average_initial_state': initial_df.mean().to_dict(),
                 'average_final_state': final_df.mean().to_dict()
             }
         }
+    
+    def analyze_experiment(self):
+        """Analyze all simulations in the experiment, grouped by simulation type"""
+        results = {
+            'experiment_name': self.experiment_name,
+            'timestamp': datetime.now().isoformat(),
+            'sims': []
+        }
+        
+        sim_groups = self._get_sim_groups()
+        
+        # Analyze each simulation type
+        for sim_name, sim_paths in sim_groups.items():
+            sim_params = self._get_sim_params(sim_name, sim_paths)
+            sim_results = self._analyze_sim_group(sim_name, sim_params, sim_paths)
+            results['sims'].append(sim_results)
+            
+        return results
     
     def generate_report(self, output_path=None):
         """Generate analysis report and save to file"""
