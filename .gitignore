@@ -35,6 +35,8 @@ coverage/
 .tmp/
 .temp/
 
-# Data Objects
+# Data Objects except for the dir itself and the .gitkeep files
+data/
 code/data/*
 !code/data/.gitkeep
+!data/.gitkeep

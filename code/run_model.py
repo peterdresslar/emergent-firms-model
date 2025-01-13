@@ -4,7 +4,7 @@ from model_def import MODEL_NAME, MODEL_VERSION, PARAMETERS #noqa
 import os
 from datetime import datetime
 
-async def run_EmergentFirmsModel(parameters=None, tmax=100, path='./data/', experiment='default'):
+async def run_EmergentFirmsModel(parameters=None, tmax=100, path='../data/', experiment='default'):
     # If parameters is None, use all defaults
     if parameters is None:
         model_parameters = [p["default"] for p in PARAMETERS]
@@ -24,7 +24,7 @@ async def run_EmergentFirmsModel(parameters=None, tmax=100, path='./data/', expe
     
     return F, agentHistory
 
-async def run_model(simdef, path='./data/'):
+async def run_model(simdef, path='../data/'):
     if not isinstance(simdef, dict):
         raise ValueError("simdef must be a dictionary")
     

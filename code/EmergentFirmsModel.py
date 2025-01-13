@@ -36,7 +36,7 @@ from datetime import datetime
 
 # csv file name
 # PDD: new path variable -- the directory where the data will be saved
-path = './data/'
+path = '../data/'
 
 # experiment name controls file naming. set this to a value if you want to simply run from here.
 experiment = 'N600t500lendingrate3'
