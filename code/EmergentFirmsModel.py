@@ -12,7 +12,6 @@
 # This code will run a single simulation of the Emergent Firm Model with the parameters specified.
 # Firm data for each timestep is saved in a .csv file, and a network graph representing final economy structure
 # is saved as a .gml file. The network also contains savings, wages and loan node attributes.
-# Refer to ODD for 
 ######################################################################################################################
 
 ######################################################################################################################
@@ -149,170 +148,100 @@ def decide(i, agents, F, S, move_cost, startup_cost, lending, lendingrate, debt_
     A = list(nx.node_connected_component(F, i))
     if i in A: A.remove(i) #other current firm members
     
-    e_other, U_other, firm_other, other_log_entry = other_utility(i, agents, F, S, A, lendingrate, debt_awareness, loan_repayment_lookahead, loan_risk_factor)
-    
-    log_entry = {
-        "agent_id": i,
-        "time": None,  # will be filled in action()
-        "decision_type": None,
-        "old_firm": firm,
-        "old_wage": wage,
-        "old_savings": savings,
-        "old_loan": loan,
-        "U_single": U_single,
-        "e_single": e_single,
-        "U_other": U_other,
-        "e_other": e_other,
-        "firm_other": firm_other,
-        "new_firm": None,
-        "new_e_star": None,
-        "cost": None,
-        "sampled_inputs": {},
-        "narrative": "",
-        "other_utility_log": other_log_entry,
-        "optimize_e_verification": None
-    }
+    e_other, U_other, firm_other = other_utility(i, agents, F, S, A, lendingrate, debt_awareness, loan_repayment_lookahead, loan_risk_factor)
     
     # Verify optimize_e
     verification_results = verify_optimize_e(agents, F, i)
-    log_entry["optimize_e_verification"] = verification_results
-    log_entry["narrative"] += verification_results["narrative"]
+    print(verification_results["narrative"])
     
     if not A: #singleton firm
-        log_entry["decision_type"] = "singleton_firm"
         cost = wage * move_cost
-        log_entry["cost"] = cost
-        log_entry["sampled_inputs"]["move_cost"] = move_cost
         if U_other > U_single:
-            log_entry["narrative"] = f"Singleton agent {i} considers moving to firm {firm_other} because U_other ({U_other:.4f}) > U_single ({U_single:.4f})."
+            print(f"Singleton agent {i} considers moving to firm {firm_other} because U_other ({U_other:.4f}) > U_single ({U_single:.4f}).")
             if savings >= cost:
                 e_star, firm = e_other, firm_other
                 agents[i]['savings'] += -1 * cost
                 agents[i]['move'] = 1
-                log_entry["narrative"] += f" Agent {i} has sufficient savings ({savings:.4f}) to cover move cost ({cost:.4f})."
-                log_entry["new_firm"] = firm
-                log_entry["new_e_star"] = e_star
+                print(f"Agent {i} has sufficient savings ({savings:.4f}) to cover move cost ({cost:.4f}).")
             elif lending and loan == 0:
                 e_star, firm = e_other, firm_other
                 agents[i]['loan'] = cost - savings
                 agents[i]['savings'] = 0
                 agents[i]['move'] = 1
                 agents[i]['borrow'] = 1
-                log_entry["narrative"] += f" Agent {i} borrows to cover move cost ({cost:.4f}) because savings ({savings:.4f}) are insufficient."
-                log_entry["new_firm"] = firm
-                log_entry["new_e_star"] = e_star
+                print(f"Agent {i} borrows to cover move cost ({cost:.4f}) because savings ({savings:.4f}) are insufficient.")
             else:
                 e_star = e_single
                 agents[i]['thwart'] = 1
-                log_entry["narrative"] += f" Agent {i} cannot afford to move and has no loan, so move is thwarted."
-                log_entry["new_firm"] = firm
-                log_entry["new_e_star"] = e_star
+                print(f"Agent {i} cannot afford to move and has no loan, so move is thwarted.")
         else:
             e_star = e_single
-            log_entry["narrative"] = f"Singleton agent {i} remains in place because U_other ({U_other:.4f}) <= U_single ({U_single:.4f})."
-            log_entry["new_firm"] = firm
-            log_entry["new_e_star"] = e_star
-                
+            print(f"Singleton agent {i} remains in place because U_other ({U_other:.4f}) <= U_single ({U_single:.4f}).")
+
     else:
-        log_entry["decision_type"] = "non_singleton_firm"
         e_current, U_current = current_utility(i, agents, A)
         all_U = [U_current, U_other, U_single]
-        log_entry["U_current"] = U_current
-        log_entry["e_current"] = e_current
-        log_entry["sampled_inputs"]["all_U"] = all_U
     
         if max(all_U) == U_single:
-            log_entry["narrative"] = f"Agent {i} considers starting a new firm because U_single ({U_single:.4f}) is the highest utility."
+            print(f"Agent {i} considers starting a new firm because U_single ({U_single:.4f}) is the highest utility.")
             cost = startup_cost * wage
-            log_entry["cost"] = cost
-            log_entry["sampled_inputs"]["startup_cost"] = startup_cost
             if savings >= cost:
                 e_star, firm = e_single, i
                 agents[i]['savings'] += -1 * cost
                 agents[i]['startup'] = 1
-                log_entry["narrative"] += f" Agent {i} has sufficient savings ({savings:.4f}) to cover startup cost ({cost:.4f})."
-                log_entry["new_firm"] = firm
-                log_entry["new_e_star"] = e_star
+                print(f"Agent {i} has sufficient savings ({savings:.4f}) to cover startup cost ({cost:.4f}).")
             elif lending and loan == 0:
                 e_star, firm = e_single, i
                 agents[i]['loan'] = cost - savings
                 agents[i]['savings'] = 0
                 agents[i]['startup'] = 1
                 agents[i]['borrow'] = 1
-                log_entry["narrative"] += f" Agent {i} borrows to cover startup cost ({cost:.4f}) because savings ({savings:.4f}) are insufficient."
-                log_entry["new_firm"] = firm
-                log_entry["new_e_star"] = e_star
+                print(f"Agent {i} borrows to cover startup cost ({cost:.4f}) because savings ({savings:.4f}) are insufficient.")
             else:
                 e_star = e_current
                 agents[i]['thwart'] = 1
-                log_entry["narrative"] += f" Agent {i} cannot afford to start a firm and has no loan, so startup is thwarted."
-                log_entry["new_firm"] = firm
-                log_entry["new_e_star"] = e_star
+                print(f"Agent {i} cannot afford to start a firm and has no loan, so startup is thwarted.")
         elif max(all_U) == U_other:
-            log_entry["narrative"] = f"Agent {i} considers moving to firm {firm_other} because U_other ({U_other:.4f}) is the highest utility."
+            print(f"Agent {i} considers moving to firm {firm_other} because U_other ({U_other:.4f}) is the highest utility.")
             cost = move_cost * wage
-            log_entry["cost"] = cost
-            log_entry["sampled_inputs"]["move_cost"] = move_cost
             if savings >= cost:
                 e_star, firm = e_other, firm_other
                 agents[i]['savings'] += -1 * cost
                 agents[i]['move'] = 1
-                log_entry["narrative"] += f" Agent {i} has sufficient savings ({savings:.4f}) to cover move cost ({cost:.4f})."
-                log_entry["new_firm"] = firm
-                log_entry["new_e_star"] = e_star
+                print(f"Agent {i} has sufficient savings ({savings:.4f}) to cover move cost ({cost:.4f}).")
             elif lending and loan == 0:
                 e_star, firm = e_other, firm_other
                 agents[i]['loan'] = cost - savings
                 agents[i]['savings'] = 0
                 agents[i]['move'] = 1
                 agents[i]['borrow'] = 1
-                log_entry["narrative"] += f" Agent {i} borrows to cover move cost ({cost:.4f}) because savings ({savings:.4f}) are insufficient."
-                log_entry["new_firm"] = firm
-                log_entry["new_e_star"] = e_star
+                print(f"Agent {i} borrows to cover move cost ({cost:.4f}) because savings ({savings:.4f}) are insufficient.")
             else:
                 e_star = e_current
                 agents[i]['thwart'] = 1
-                log_entry["narrative"] = f" Agent {i} cannot afford to move and has no loan, so move is thwarted."
-                log_entry["new_firm"] = firm
-                log_entry["new_e_star"] = e_star
+                print(f"Agent {i} cannot afford to move and has no loan, so move is thwarted.")
         else:
             e_star = e_current
-            log_entry["narrative"] = f"Agent {i} remains in place because U_current ({U_current:.4f}) is the highest utility."
-            log_entry["new_firm"] = firm
-            log_entry["new_e_star"] = e_star
+            print(f"Agent {i} remains in place because U_current ({U_current:.4f}) is the highest utility.")
     
-    return(e_star, firm, log_entry)
+    return(e_star, firm)
 
 def other_utility(i, agents, F, S, A, lendingrate, debt_awareness, loan_repayment_lookahead, loan_risk_factor):
-    B = list(S.neighbors(i)) # Network is created with at least two links per node.
+    B = list(S.neighbors(i))
     C = [a for a in B if a not in A]
     U, e_star, firm, e_trial, U_trial = 0, 0, 0, 0, 0
-    
-    log_entry = {
-        "agent_id": i,
-        "function": "other_utility",
-        "evaluated_firms": [],
-        "best_firm": None,
-        "best_e_star": None,
-        "best_U": None,
-        "narrative": ""
-    }
     
     for j in C:
         trial = agents[j]['firm']
 
-        # before we start, we need to check if the agent can repay the loan with the expected wage
-        # from the firm they are considering moving to. This way the agent can choose to move to
-        # the firm that maximizes their utility out of the options they *can afford*.
-
-        # Check the flag for debt_awareness first! If debt_awareness is True, the model skips the evaluation.
-        # Note this flag is model-wide, not per-agent.
         if debt_awareness:
-            amount_to_borrow = cost * multiplier # TODO this is a hack for now, selecting which size loan is problem since we are optimizing *using* this check
-            if can_repay_loan(agents[i], agents[trial]['wage'], amount_to_borrow, lendingrate, loan_repayment_lookahead, loan_risk_factor):
-                log_entry["narrative"] += f"Agent {i} can repay loan at rate {lendingrate} with expected wage from firm {trial} within {loan_repayment_lookahead} steps."
-            else:
-                log_entry["narrative"] += f"Agent {i} cannot repay loan at rate {lendingrate} with expected wage from firm {trial} within {loan_repayment_lookahead} steps."
+            amount_to_borrow = cost * multiplier
+            can_repay, _ = can_repay_loan(
+                agents[i], agents[trial]['wage'], amount_to_borrow, lendingrate,
+                loan_repayment_lookahead, loan_risk_factor
+            )
+            if not can_repay:
+                print(f"Agent {i} cannot repay loan at rate {lendingrate} with expected wage from firm {trial} within {loan_repayment_lookahead} steps.")
                 continue
 
         D = list(nx.node_connected_component(F, j))
@@ -324,22 +253,14 @@ def other_utility(i, agents, F, S, A, lendingrate, debt_awareness, loan_repaymen
         e_trial, U_trial = optimize_e(agents[trial]['a'], agents[trial]['b'], agents[trial]['beta'], 
                                       agents[i]['omega'], 
                                       agents[i]['theta'], E_o, n + 1)
-        log_entry["evaluated_firms"].append({
-            "firm_id": trial,
-            "e_trial": e_trial,
-            "U_trial": U_trial
-        })
         if U_trial > U: 
             e_star, U, firm = e_trial, U_trial, trial
-            log_entry["best_firm"] = firm
-            log_entry["best_e_star"] = e_star
-            log_entry["best_U"] = U
-            log_entry["narrative"] = f"Agent {i} found firm {firm} to have the highest utility ({U:.4f}) among neighbors."
+            print(f"Agent {i} found firm {firm} to have the highest utility ({U:.4f}) among neighbors.")
     
     if not C:
-        log_entry["narrative"] = f"Agent {i} has no neighbors to evaluate."
+        print(f"Agent {i} has no neighbors to evaluate.")
     
-    return (e_star, U, firm, log_entry)
+    return (e_star, U, firm)
 
 def current_utility(i, agents, A): # A is other employees
     e_star, U, E_o = 0, 0, 0
@@ -411,22 +332,71 @@ def can_repay_loan(agent, expected_wage, cost, lendingrate, loan_repayment_looka
     assume `wage_risk_factor * current_expected_wage`, reflecting 
     possible firm or wage instability.
     """
+
+    log_entry = {
+        "function": "can_repay_loan",
+        "agent_id": agent['id'],
+        "expected_wage": expected_wage,
+        "cost": cost,
+        "lendingrate": lendingrate,
+        "loan_repayment_lookahead": loan_repayment_lookahead,
+        "loan_risk_factor": loan_risk_factor
+    }
+    
     principal = cost - agent['savings']
     if principal <= 0:
-        return True
+        log_entry["narrative"] = f"Loan not needed: Savings ({agent['savings']}) cover the cost ({cost})."
+        return True, log_entry
 
     s = agent['rate']
-    conservative_wage = (1 - loan_risk_factor/100) * expected_wage
+    conservative_wage = (1 - loan_risk_factor / 100) * expected_wage
 
-    for _ in range(loan_repayment_lookahead):
-        # Step accrual
+    log_entry["narrative"] = "Starting loan repayment simulation:"
+    log_entry["narrative"] += f"  Initial principal needed: {principal}"
+    log_entry["narrative"] += f"  Expected wage: {expected_wage}"
+    log_entry["narrative"] += f"  Conservative wage (after risk adjustment of {loan_risk_factor}%): {conservative_wage}"
+    log_entry["narrative"] += f"  Savings rate (s): {s}"
+    log_entry["narrative"] += f"  Lending rate per period: {lendingrate}"
+    log_entry["narrative"] += f"  Loan repayment lookahead periods: {loan_repayment_lookahead}"
+
+    #temporary prnt for debugging
+    print("Starting loan repayment simulation:")
+    print(f"  Initial principal needed: {principal}")
+    print(f"  Expected wage: {expected_wage}")
+    print(f"  Conservative wage (after risk adjustment of {loan_risk_factor}%): {conservative_wage}")
+    print(f"  Savings rate (s): {s}")
+    print(f"  Lending rate per period: {lendingrate}")
+    print(f"  Loan repayment lookahead periods: {loan_repayment_lookahead}")
+
+    for step in range(1, loan_repayment_lookahead + 1):
+        # Accrue interest on principal
         principal *= (1 + lendingrate)
-        # Step partial pay
-        principal -= (s * conservative_wage)
-        if principal <= 0:
-            return True
+        # Calculate payment for this period
+        payment = s * conservative_wage
+        # Subtract payment from principal
+        principal -= payment
 
-    return principal <= 0
+        #temporary prnt for debugging
+        print(f"Period {step}:")
+        print(f"  Accrued principal after interest: {principal + payment}")
+        print(f"  Payment made: {payment}")
+        print(f"  Remaining principal: {principal}")
+
+        log_entry["narrative"] += f"Period {step}: "
+        log_entry["narrative"] += f"  Accrued principal after interest: {principal + payment}"
+        log_entry["narrative"] += f"  Payment made: {payment}"
+        log_entry["narrative"] += f"  Remaining principal: {principal}"
+
+        if principal <= 0:
+            log_entry["narrative"] += f"Loan can be repaid within {step} periods."
+            return True, log_entry
+
+    if principal <= 0:
+        log_entry["narrative"] += "Loan can be repaid within lookahead period."
+        return True, log_entry
+    else:
+        log_entry["narrative"] += f"Loan cannot be repaid within {loan_repayment_lookahead} periods. Remaining principal: {principal}"
+        return False, log_entry
 
 ######################################################################################################################
 # utility functions
@@ -657,7 +627,7 @@ def generate_economic_census(agents, t, F):
 def action(parameters, tmax, path, experiment):
     print("Model called with parameters: ", parameters, "\n tmax: ", tmax, "\n path: ", path, "\n experiment: ", experiment)
     
-    # Create experiment-specific directory with a date-time stamp (use an underscore between experiment and datetimestamp)
+    # Create experiment-specific directory with a date-time stamp
     experiment_path = os.path.join(path, experiment + "_" + datetime.now().strftime("%Y-%m-%d_%H-%M-%S"))
     os.makedirs(experiment_path, exist_ok=True)
     
@@ -693,7 +663,6 @@ def action(parameters, tmax, path, experiment):
     F = nx.empty_graph(N)
 
     loc = 0
-    events_log = [] # Initialize the events log at the start of action
     firms_history = [] # Initialize the firms history log
     census_history = [] # Initialize the economic census log
     for t in range(tmax):
@@ -702,9 +671,7 @@ def action(parameters, tmax, path, experiment):
             if random.random() > churn: continue
             agents[i]['go'] = 1
             firm = agents[i]['firm']
-            # Unpack all three return values from decide
-            agents[i]['e_star'], new_firm, log_entry = decide(i, agents, F, S, move_rate, startup_rate, lending, lendingrate, debt_awareness, loan_repayment_lookahead, loan_risk_factor)
-            log_entry["time"] = t  # Add the time to the log entry
+            agents[i]['e_star'], new_firm = decide(i, agents, F, S, move_rate, startup_rate, lending, lendingrate, debt_awareness, loan_repayment_lookahead, loan_risk_factor)
             if new_firm != firm: 
                 A = nx.node_connected_component(F, i)
                 if firm == i and len(A) > 1: F = change_ownership(F, i, A, agents)
@@ -714,9 +681,7 @@ def action(parameters, tmax, path, experiment):
             F.nodes[i]['savings'] = numpy.float64(agents[i]['savings'])
             F.nodes[i]['wage'] = numpy.float64(agents[i]['wage'])
             F.nodes[i]['loan'] = numpy.float64(agents[i]['loan'])
-            
-            if log_entry["decision_type"] is not None:
-                events_log.append(log_entry)
+
         distribute_output(agents, F)
         if lending: pay_loans(N, agents, lendingrate)
         params = parameters + [t]
@@ -728,10 +693,6 @@ def action(parameters, tmax, path, experiment):
         # Generate and store the reports
         firms_history.append(generate_firms_report(agents, F, t))
         census_history.append(generate_economic_census(agents, t, F))
-    
-    # After the main loop finishes, serialize the events to JSON
-    with open(os.path.join(experiment_path, "events.json"), "w") as f:
-        json.dump(events_log, f, indent=2)
     
     # Convert the history logs to pandas DataFrames and save them to CSV
     firms_history_df = pandas.concat([pandas.DataFrame(x) for x in firms_history])
